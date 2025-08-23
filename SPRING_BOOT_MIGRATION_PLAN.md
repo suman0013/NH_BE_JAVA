@@ -176,11 +176,11 @@ All APIs must use consistent error response format:
 **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
 
 **Sub-tasks:**
-- [ ] Create new Replit Java project named "namhatta-springboot"
-- [ ] Set up Maven project structure with Spring Boot parent
-- [ ] Configure `pom.xml` with all required dependencies
-- [ ] Create basic application structure in Replit
-- [ ] Test basic Spring Boot startup
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create new Replit Java project named "namhatta-springboot"
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up Maven project structure with Spring Boot parent
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure `pom.xml` with all required dependencies (including Lombok & Swagger)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create basic application structure in Replit
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test basic Spring Boot startup
 
 **Files to create:**
 ```
@@ -188,10 +188,13 @@ pom.xml                           <- Maven configuration
 src/main/java/com/namhatta/
 ├── NamhattaApplication.java     <- Main application class
 └── config/
-    └── DatabaseConfig.java      <- Database connection
+    ├── DatabaseConfig.java      <- Database connection
+    ├── SwaggerConfig.java       <- Swagger/OpenAPI configuration
+    └── LoggingConfig.java       <- Logging configuration
 src/main/resources/
 ├── application.yml              <- Main configuration
-└── application-dev.yml          <- Development configuration
+├── application-dev.yml          <- Development configuration
+└── logback-spring.xml           <- Logging configuration
 ```
 
 **Maven Dependencies (pom.xml):**
@@ -276,11 +279,23 @@ src/main/resources/
         <version>1.10.0</version>
     </dependency>
     
-    <!-- Documentation -->
+    <!-- Documentation & API -->
     <dependency>
         <groupId>org.springdoc</groupId>
         <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         <version>2.1.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>2.2.8</version>
+    </dependency>
+    
+    <!-- Lombok for reducing boilerplate code -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <scope>provided</scope>
     </dependency>
     
     <!-- Testing -->
@@ -307,11 +322,72 @@ src/main/resources/
 </dependencies>
 ```
 
+**Swagger Configuration:**
+
+`SwaggerConfig.java`:
+```java
+@Configuration
+@OpenAPIDefinition(
+    info = @Info(
+        title = "Namhatta Management System API",
+        version = "1.0.0",
+        description = "OpenAPI spec for Namhatta web and mobile-compatible system",
+        contact = @Contact(name = "System Administrator", email = "admin@namhatta.com")
+    ),
+    security = @SecurityRequirement(name = "bearerAuth")
+)
+@SecurityScheme(
+    name = "bearerAuth",
+    type = SecuritySchemeType.HTTP,
+    bearerFormat = "JWT",
+    scheme = "bearer"
+)
+@Slf4j
+public class SwaggerConfig {
+    
+    public SwaggerConfig() {
+        log.info("Initializing Swagger configuration for API documentation");
+    }
+    
+    @Bean
+    public OpenAPI customOpenAPI() {
+        log.debug("Creating custom OpenAPI configuration");
+        return new OpenAPI()
+            .components(new Components()
+                .addSecuritySchemes("bearerAuth",
+                    new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")))
+            .addServersItem(new Server().url("/").description("Current server"));
+    }
+}
+```
+
+**Main Application Class with Lombok:**
+
+`NamhattaApplication.java`:
+```java
+@SpringBootApplication
+@EnableJpaRepositories
+@EnableConfigurationProperties
+@Slf4j
+public class NamhattaApplication {
+
+    public static void main(String[] args) {
+        log.info("Starting Namhatta Management System Spring Boot Application");
+        SpringApplication.run(NamhattaApplication.class, args);
+        log.info("Namhatta Management System application started successfully");
+    }
+}
+```
+
 **Validation Criteria:**
-- [ ] Spring Boot application starts successfully
-- [ ] Can connect to existing PostgreSQL database using same connection string
-- [ ] Maven builds without errors
-- [ ] Replit workflow runs `mvn spring-boot:run` successfully
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Spring Boot application starts successfully
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Can connect to existing PostgreSQL database using same connection string
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Maven builds without errors
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Replit workflow runs `mvn spring-boot:run` successfully
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Swagger UI accessible at `/swagger-ui.html`
 
 ---
 
@@ -321,11 +397,11 @@ src/main/resources/
 **Purpose**: Connect to your existing Neon PostgreSQL database using the same connection string
 
 **Sub-tasks:**
-- [ ] Create `application.yml` with database configuration
-- [ ] Set up environment variables for DATABASE_URL, JWT_SECRET, SESSION_SECRET
-- [ ] Create `DatabaseConfig.java` for connection pooling
-- [ ] Test database connection
-- [ ] Verify can read existing data from devotees table
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create `application.yml` with database configuration
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up environment variables for DATABASE_URL, JWT_SECRET, SESSION_SECRET
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create `DatabaseConfig.java` for connection pooling
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test database connection
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Verify can read existing data from devotees table
 
 **Configuration Files:**
 
@@ -375,11 +451,11 @@ session:
 **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
 
 **Sub-tasks:**
-- [ ] Create `.replit` file for Java/Maven configuration
-- [ ] Configure run command for Spring Boot
-- [ ] Set up environment variables in Replit Secrets
-- [ ] Test hot reload functionality
-- [ ] Configure port forwarding for port 5000
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create `.replit` file for Java/Maven configuration
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure run command for Spring Boot
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up environment variables in Replit Secrets
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test hot reload functionality
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure port forwarding for port 5000
 
 **Replit Configuration Files:**
 
@@ -428,28 +504,44 @@ run = ["mvn", "clean", "package", "-DskipTests", "&&", "java", "-jar", "target/*
 - [ ] Create `Leader.java` entity
 - [ ] Test entity mapping with simple queries
 
-**Key Entity: User.java**
+**Key Entity: User.java (with Lombok)**
 ```java
 @Entity
 @Table(name = "users")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString(exclude = {"passwordHash", "districts"})
+@Slf4j
+@Schema(description = "User entity for authentication and authorization")
 public class User {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "User unique identifier", example = "1")
     private Long id;
     
     @Column(unique = true, nullable = false)
+    @Schema(description = "Username for login", example = "admin", required = true)
     private String username;
     
     @Column(name = "password_hash", nullable = false)
+    @Schema(description = "Hashed password", hidden = true)
     private String passwordHash;
     
     @Enumerated(EnumType.STRING)
+    @Schema(description = "User role", example = "ADMIN", allowableValues = {"ADMIN", "OFFICE", "DISTRICT_SUPERVISOR"})
     private UserRole role; // ADMIN, OFFICE, DISTRICT_SUPERVISOR
     
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    @Schema(description = "Whether user account is active", example = "true")
     private Boolean isActive = true;
     
     @Column(name = "created_at")
+    @Schema(description = "Account creation timestamp")
     private LocalDateTime createdAt;
     
     // Many-to-many relationship with districts
@@ -459,9 +551,20 @@ public class User {
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "district_code")
     )
+    @Builder.Default
+    @Schema(description = "Districts assigned to this user (for supervisors)")
     private Set<District> districts = new HashSet<>();
     
-    // Getters, setters, constructors
+    @PrePersist
+    protected void onCreate() {
+        log.debug("Creating new user entity: {}", username);
+        createdAt = LocalDateTime.now();
+    }
+    
+    @PostLoad
+    protected void onLoad() {
+        log.trace("Loaded user entity: {} with role: {}", username, role);
+    }
 }
 ```
 
@@ -1309,11 +1412,11 @@ public class AuthBypassFilter implements Filter {
 **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
 
 **Sub-tasks:**
-- [ ] Create `AuthService.java` for login/logout logic
-- [ ] Create `SessionService.java` for session management
-- [ ] Create `UserDetailsServiceImpl.java` for Spring Security
-- [ ] Implement password validation with BCrypt
-- [ ] Test with existing users (admin, office1, supervisor1)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create `AuthService.java` for login/logout logic
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create `SessionService.java` for session management  
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create `UserDetailsServiceImpl.java` for Spring Security
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Implement password validation with BCrypt
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test with existing users (admin, office1, supervisor1)
 
 **Authentication Service:**
 
@@ -1321,73 +1424,116 @@ public class AuthBypassFilter implements Filter {
 ```java
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
+@Tag(name = "Authentication", description = "Authentication and authorization services")
 public class AuthService {
     
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final SessionService sessionService;
+    private final JwtTokenProvider tokenProvider;
+    private final PasswordEncoder passwordEncoder;
     
-    @Autowired
-    private SessionService sessionService;
-    
-    @Autowired
-    private JwtTokenProvider tokenProvider;
-    
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    
+    @Operation(summary = "Authenticate user", description = "Authenticate user with username and password")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Authentication successful"),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+        @ApiResponse(responseCode = "423", description = "Account disabled")
+    })
     public LoginResponse authenticate(LoginRequest request) {
-        // Find user (same logic as Node.js)
-        User user = userRepository.findByUsername(request.getUsername())
-            .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+        log.info("Starting authentication for user: {}", request.getUsername());
         
-        // Check if user is active
-        if (!user.getIsActive()) {
-            throw new BadCredentialsException("User account is disabled");
+        try {
+            // Find user (same logic as Node.js)
+            log.debug("Looking up user in database: {}", request.getUsername());
+            User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> {
+                    log.warn("User not found: {}", request.getUsername());
+                    return new BadCredentialsException("Invalid credentials");
+                });
+            
+            log.debug("User found, checking if account is active: {}", user.getUsername());
+            // Check if user is active
+            if (!user.getIsActive()) {
+                log.warn("Attempt to login with disabled account: {}", user.getUsername());
+                throw new BadCredentialsException("User account is disabled");
+            }
+            
+            // Validate password
+            log.debug("Validating password for user: {}", user.getUsername());
+            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+                log.warn("Invalid password attempt for user: {}", user.getUsername());
+                throw new BadCredentialsException("Invalid credentials");
+            }
+            
+            // Create session (enforces single login)
+            log.debug("Creating session for user: {}", user.getUsername());
+            String sessionToken = sessionService.createSession(user);
+            
+            // Generate JWT token
+            log.debug("Generating JWT token for user: {}", user.getUsername());
+            String jwtToken = tokenProvider.createToken(user, sessionToken);
+            
+            // Prepare response
+            log.debug("Preparing authentication response for user: {}", user.getUsername());
+            UserDto userDto = UserDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .role(user.getRole().name())
+                .districts(user.getDistricts().stream()
+                    .map(d -> {
+                        log.trace("Adding district to user response: {}", d.getDistrictNameEnglish());
+                        return new DistrictDto(d.getCode(), d.getDistrictNameEnglish());
+                    })
+                    .collect(Collectors.toList()))
+                .build();
+            
+            LoginResponse response = LoginResponse.builder()
+                .token(jwtToken)
+                .user(userDto)
+                .build();
+                
+            log.info("Authentication successful for user: {}", user.getUsername());
+            return response;
+            
+        } catch (BadCredentialsException e) {
+            log.error("Authentication failed for user: {}", request.getUsername());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during authentication for user: {}", request.getUsername(), e);
+            throw new RuntimeException("Authentication process failed", e);
         }
-        
-        // Validate password
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new BadCredentialsException("Invalid credentials");
-        }
-        
-        // Create session (enforces single login)
-        String sessionToken = sessionService.createSession(user);
-        
-        // Generate JWT token
-        String jwtToken = tokenProvider.createToken(user, sessionToken);
-        
-        // Prepare response
-        UserDto userDto = UserDto.builder()
-            .id(user.getId())
-            .username(user.getUsername())
-            .role(user.getRole().name())
-            .districts(user.getDistricts().stream()
-                .map(d -> new DistrictDto(d.getCode(), d.getDistrictNameEnglish()))
-                .collect(Collectors.toList()))
-            .build();
-        
-        return LoginResponse.builder()
-            .token(jwtToken)
-            .user(userDto)
-            .build();
     }
     
+    @Operation(summary = "Logout user", description = "Logout user and invalidate session")
     public void logout(String username, String sessionToken) {
-        // Invalidate session
-        sessionService.invalidateSession(username, sessionToken);
+        log.info("Starting logout process for user: {}", username);
         
-        // Add token to blacklist (same as Node.js)
-        // Implementation similar to current JWT blacklist table
+        try {
+            log.debug("Invalidating session for user: {}", username);
+            // Invalidate session
+            sessionService.invalidateSession(username, sessionToken);
+            
+            log.debug("Adding token to blacklist for user: {}", username);
+            // Add token to blacklist (same as Node.js)
+            // Implementation similar to current JWT blacklist table
+            tokenProvider.blacklistToken(sessionToken);
+            
+            log.info("Logout successful for user: {}", username);
+        } catch (Exception e) {
+            log.error("Error during logout for user: {}", username, e);
+            throw new RuntimeException("Logout process failed", e);
+        }
     }
 }
 ```
 
 **Validation Criteria:**
-- [ ] Can authenticate with existing users
-- [ ] Password validation works with BCrypt
-- [ ] Session management enforces single login
-- [ ] Logout invalidates sessions and tokens
-- [ ] District information included for supervisors
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Can authenticate with existing users
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Password validation works with BCrypt
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Session management enforces single login
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Logout invalidates sessions and tokens
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - District information included for supervisors
 
 ---
 
