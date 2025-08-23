@@ -1,5 +1,32 @@
 # Spring Boot Migration Plan for Namhatta Management System
 
+## 🤖 AGENT WORKFLOW INSTRUCTIONS
+
+**⚠️ CRITICAL: All agents must follow these rules when working on this migration:**
+
+### Task Status Management
+1. **BEFORE starting any task/subtask:** Update the status in this plan from `☐ Not Started` to `☐ In Progress`
+2. **AFTER completing any task/subtask:** Update the status from `☐ In Progress` to `☐ Completed`
+3. **Never skip status updates** - tracking progress is mandatory for coordination
+
+### Task Execution Order
+1. **NEVER pick random tasks** - follow the exact phase and task order listed in this plan
+2. **Complete Phase 1 entirely before moving to Phase 2**
+3. **Complete all subtasks within a task before marking the task complete**
+4. **Dependencies must be respected** - later phases depend on earlier phases
+
+### Status Update Format
+```
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+```
+
+### Work Documentation
+- Document any deviations or issues encountered in the task notes
+- Update validation criteria as tasks are completed
+- Add implementation details for complex configurations
+
+---
+
 ## Overview
 This document provides a detailed, task-based migration plan to move the Namhatta Management System backend from Node.js/Express to Spring Boot while maintaining 100% functionality and API compatibility. The migration uses the **same PostgreSQL database** with no schema changes required.
 
@@ -193,6 +220,10 @@ src/main/resources/
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
     
     <!-- Database -->
     <dependency>
@@ -217,6 +248,34 @@ src/main/resources/
         <version>0.11.5</version>
     </dependency>
     
+    <!-- Rate Limiting & Caching -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.github.vladimir-bukhtoyarov</groupId>
+        <artifactId>bucket4j-core</artifactId>
+        <version>8.7.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.github.vladimir-bukhtoyarov</groupId>
+        <artifactId>bucket4j-redis</artifactId>
+        <version>8.7.0</version>
+    </dependency>
+    
+    <!-- Input Sanitization -->
+    <dependency>
+        <groupId>org.owasp.antisamy</groupId>
+        <artifactId>antisamy</artifactId>
+        <version>1.7.4</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-text</artifactId>
+        <version>1.10.0</version>
+    </dependency>
+    
     <!-- Documentation -->
     <dependency>
         <groupId>org.springdoc</groupId>
@@ -233,6 +292,16 @@ src/main/resources/
     <dependency>
         <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>postgresql</artifactId>
         <scope>test</scope>
     </dependency>
 </dependencies>
@@ -973,7 +1042,270 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 ---
 
-### Task 3.2: User Authentication Service
+### Task 3.2: Rate Limiting & Security Configuration
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement comprehensive rate limiting and security headers matching Node.js system
+
+**Sub-tasks:**
+- [ ] Create `RateLimitConfig.java` with three rate limiting configurations
+- [ ] Create `SecurityHeadersConfig.java` for Helmet-equivalent security headers
+- [ ] Create `InputSanitizationFilter.java` for XSS protection
+- [ ] Configure CORS policies for development vs production
+- [ ] Test all security configurations
+
+**Rate Limiting Configuration:**
+
+`RateLimitConfig.java`:
+```java
+@Configuration
+@EnableConfigurationProperties(RateLimitProperties.class)
+public class RateLimitConfig {
+    
+    @Bean
+    @Qualifier("loginRateLimit")
+    public RedisRateLimiter loginRateLimit() {
+        // 5 attempts per 15 minutes (same as Node.js)
+        return new RedisRateLimiter(5, 15 * 60, Duration.ofMinutes(15));
+    }
+    
+    @Bean 
+    @Qualifier("apiRateLimit")
+    public RedisRateLimiter apiRateLimit() {
+        // 100 requests per 15 minutes (same as Node.js)
+        return new RedisRateLimiter(100, 15 * 60, Duration.ofMinutes(15));
+    }
+    
+    @Bean
+    @Qualifier("modifyRateLimit") 
+    public RedisRateLimiter modifyRateLimit() {
+        // 10 requests per 1 minute for modifications (same as Node.js)
+        return new RedisRateLimiter(10, 60, Duration.ofMinutes(1));
+    }
+}
+```
+
+**Input Sanitization Filter:**
+
+`InputSanitizationFilter.java`:
+```java
+@Component
+@Order(FilterRegistrationBean.HIGHEST_PRECEDENCE + 1)
+public class InputSanitizationFilter implements Filter {
+    
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, 
+                        FilterChain chain) throws IOException, ServletException {
+        
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        
+        // Only sanitize POST, PUT, PATCH requests (same as Node.js)
+        if (Arrays.asList("POST", "PUT", "PATCH").contains(httpRequest.getMethod())) {
+            SanitizedRequestWrapper sanitizedRequest = new SanitizedRequestWrapper(httpRequest);
+            chain.doFilter(sanitizedRequest, response);
+        } else {
+            chain.doFilter(request, response);
+        }
+    }
+    
+    private static class SanitizedRequestWrapper extends HttpServletRequestWrapper {
+        // Implement HTML escaping and trimming logic (same as validator.escape in Node.js)
+    }
+}
+```
+
+**Security Headers Configuration:**
+
+`SecurityHeadersConfig.java`:
+```java
+@Configuration
+public class SecurityHeadersConfig {
+    
+    @Bean
+    public FilterRegistrationBean<SecurityHeadersFilter> securityHeadersFilter() {
+        FilterRegistrationBean<SecurityHeadersFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new SecurityHeadersFilter());
+        registrationBean.addUrlPatterns("/*");
+        return registrationBean;
+    }
+    
+    private static class SecurityHeadersFilter implements Filter {
+        @Override
+        public void doFilter(ServletRequest request, ServletResponse response, 
+                            FilterChain chain) throws IOException, ServletException {
+            
+            HttpServletResponse httpResponse = (HttpServletResponse) response;
+            
+            // Same security headers as Helmet configuration in Node.js
+            if ("production".equals(System.getProperty("spring.profiles.active"))) {
+                httpResponse.setHeader("Content-Security-Policy", 
+                    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "font-src 'self' https://fonts.gstatic.com; " +
+                    "img-src 'self' data: https:; connect-src 'self' https://api.replit.com; " +
+                    "object-src 'none'; media-src 'self'; frame-src 'none'");
+                    
+                httpResponse.setHeader("Strict-Transport-Security", 
+                    "max-age=31536000; includeSubDomains; preload");
+                    
+                httpResponse.setHeader("X-Content-Type-Options", "nosniff");
+                httpResponse.setHeader("X-Frame-Options", "DENY");
+                httpResponse.setHeader("X-XSS-Protection", "1; mode=block");
+            }
+            
+            chain.doFilter(request, response);
+        }
+    }
+}
+```
+
+**Validation Criteria:**
+- [ ] Login rate limiting: 5 attempts per 15 minutes per IP
+- [ ] API rate limiting: 100 requests per 15 minutes per IP
+- [ ] Modification rate limiting: 10 requests per minute per IP
+- [ ] Input sanitization escapes HTML entities and trims whitespace
+- [ ] Security headers set correctly in production
+- [ ] CORS configuration matches Node.js behavior
+
+---
+
+### Task 3.3: Development & Environment Configuration
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement development endpoints and environment-specific configurations
+
+**Sub-tasks:**
+- [ ] Create development-only authentication endpoints
+- [ ] Configure environment-specific properties
+- [ ] Implement authentication bypass for development (with safety checks)
+- [ ] Create profile-specific configurations
+- [ ] Test environment switching
+
+**Development Controller:**
+
+`DevController.java`:
+```java
+@RestController
+@RequestMapping("/api/auth/dev")
+@Profile("development")
+public class DevController {
+    
+    @Autowired
+    private Environment environment;
+    
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> getAuthStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("authEnabled", environment.getProperty("app.auth.enabled", "true"));
+        status.put("environment", environment.getProperty("spring.profiles.active", "development"));
+        status.put("devMode", "false".equals(environment.getProperty("app.auth.enabled")));
+        
+        return ResponseEntity.ok(status);
+    }
+    
+    @PostMapping("/toggle")
+    public ResponseEntity<Map<String, Object>> toggleAuth(@RequestBody Map<String, Boolean> request) {
+        // Implementation to toggle authentication for development testing
+        // Same functionality as Node.js dev endpoints
+        
+        Boolean enabled = request.get("enabled");
+        System.setProperty("app.auth.enabled", enabled.toString());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("authEnabled", enabled.toString());
+        response.put("message", String.format("Authentication %s (restart required for full effect)", 
+                                            enabled ? "enabled" : "disabled"));
+        
+        return ResponseEntity.ok(response);
+    }
+}
+```
+
+**Environment-Specific Properties:**
+
+`application-development.yml`:
+```yaml
+app:
+  auth:
+    enabled: true
+    bypass-allowed: true
+  cors:
+    allowed-origins: "*"
+  security:
+    headers-enabled: false
+    
+logging:
+  level:
+    com.namhatta: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+```
+
+`application-production.yml`:
+```yaml
+app:
+  auth:
+    enabled: true
+    bypass-allowed: false
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:https://*.replit.app}
+  security:
+    headers-enabled: true
+    
+logging:
+  level:
+    com.namhatta: INFO
+    org.springframework.security: WARN
+```
+
+**Authentication Bypass Configuration:**
+
+`AuthBypassFilter.java`:
+```java
+@Component
+@ConditionalOnProperty(name = "app.auth.enabled", havingValue = "false")
+@ConditionalOnProperty(name = "spring.profiles.active", havingValue = "development")
+public class AuthBypassFilter implements Filter {
+    
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, 
+                        FilterChain chain) throws IOException, ServletException {
+        
+        // CRITICAL: Same safety checks as Node.js implementation
+        String environment = System.getProperty("spring.profiles.active", "development");
+        String authEnabled = System.getProperty("app.auth.enabled", "true");
+        
+        if ("false".equals(authEnabled) && "production".equals(environment)) {
+            log.error("🚨 SECURITY ERROR: Authentication bypass attempted in production!");
+            ((HttpServletResponse) response).setStatus(500);
+            return;
+        }
+        
+        if ("false".equals(authEnabled) && "development".equals(environment)) {
+            log.warn("⚠️ WARNING: Authentication bypass is active in development mode");
+            
+            // Set mock user (same as Node.js)
+            MockUser mockUser = new MockUser(1L, "dev-user", "ADMIN", Collections.emptyList());
+            SecurityContextHolder.getContext().setAuthentication(
+                new PreAuthenticatedAuthenticationToken(mockUser, null, 
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+        }
+        
+        chain.doFilter(request, response);
+    }
+}
+```
+
+**Validation Criteria:**
+- [ ] Development endpoints only available in development profile
+- [ ] Authentication bypass works with safety checks (never in production)
+- [ ] Environment-specific CORS and security configurations
+- [ ] Profile-based logging configurations
+- [ ] Mock user setup matches Node.js dev behavior
+
+---
+
+### Task 3.4: User Authentication Service
 **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
 
 **Sub-tasks:**
@@ -1599,6 +1931,399 @@ public class DevoteeController {
 - [ ] Create `DashboardController.java` for statistics
 - [ ] Create `StatusController.java` for devotional statuses
 - [ ] Create `HierarchyController.java` for leadership
+
+---
+
+### Task 5.5: Map Data & Statistics Controllers
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement map data APIs for namhatta distribution statistics by geographic levels
+
+**Sub-tasks:**
+- [ ] Create `MapDataController.java` for namhatta count statistics
+- [ ] Implement geographic hierarchy statistics (country, state, district, sub-district)
+- [ ] Add district-based filtering for supervisor access
+- [ ] Test all map data endpoints
+
+**Map Data Controller:**
+
+`MapDataController.java`:
+```java
+@RestController
+@RequestMapping("/api/map")
+@Validated
+public class MapDataController {
+    
+    @Autowired
+    private MapDataService mapDataService;
+    
+    @GetMapping("/countries")
+    public ResponseEntity<List<Map<String, Object>>> getCountriesWithNamhattaCount(
+            HttpServletRequest request) {
+        
+        List<String> allowedDistricts = getAllowedDistricts(request);
+        List<Map<String, Object>> countries = mapDataService.getCountriesWithNamhattaCount(allowedDistricts);
+        
+        return ResponseEntity.ok(countries);
+    }
+    
+    @GetMapping("/states")
+    public ResponseEntity<List<Map<String, Object>>> getStatesWithNamhattaCount(
+            @RequestParam String country,
+            HttpServletRequest request) {
+        
+        List<String> allowedDistricts = getAllowedDistricts(request);
+        List<Map<String, Object>> states = mapDataService.getStatesWithNamhattaCount(country, allowedDistricts);
+        
+        return ResponseEntity.ok(states);
+    }
+    
+    @GetMapping("/districts")
+    public ResponseEntity<List<Map<String, Object>>> getDistrictsWithNamhattaCount(
+            @RequestParam String country,
+            @RequestParam String state,
+            HttpServletRequest request) {
+        
+        List<String> allowedDistricts = getAllowedDistricts(request);
+        List<Map<String, Object>> districts = mapDataService.getDistrictsWithNamhattaCount(
+                country, state, allowedDistricts);
+        
+        return ResponseEntity.ok(districts);
+    }
+    
+    @GetMapping("/subdistricts")
+    public ResponseEntity<List<Map<String, Object>>> getSubDistrictsWithNamhattaCount(
+            @RequestParam String country,
+            @RequestParam String state,
+            @RequestParam String district,
+            HttpServletRequest request) {
+        
+        List<String> allowedDistricts = getAllowedDistricts(request);
+        List<Map<String, Object>> subdistricts = mapDataService.getSubDistrictsWithNamhattaCount(
+                country, state, district, allowedDistricts);
+        
+        return ResponseEntity.ok(subdistricts);
+    }
+    
+    @GetMapping("/namhattas")
+    public ResponseEntity<List<Map<String, Object>>> getNamhattasBySubDistrict(
+            @RequestParam String country,
+            @RequestParam String state,
+            @RequestParam String district,
+            @RequestParam String subdistrict,
+            HttpServletRequest request) {
+        
+        List<String> allowedDistricts = getAllowedDistricts(request);
+        List<Map<String, Object>> namhattas = mapDataService.getNamhattasBySubDistrict(
+                country, state, district, subdistrict, allowedDistricts);
+        
+        return ResponseEntity.ok(namhattas);
+    }
+    
+    private List<String> getAllowedDistricts(HttpServletRequest request) {
+        String userRole = (String) request.getAttribute("userRole");
+        
+        if ("DISTRICT_SUPERVISOR".equals(userRole)) {
+            List<String> districtCodes = (List<String>) request.getAttribute("userDistricts");
+            return convertDistrictCodesToNames(districtCodes);
+        }
+        
+        return null; // Admin and Office can access all
+    }
+}
+```
+
+**Validation Criteria:**
+- [ ] All map data endpoints return correct namhatta counts
+- [ ] District filtering works for supervisors
+- [ ] Response format matches Node.js API exactly
+- [ ] Geographic hierarchy navigation works properly
+- [ ] Performance is optimized for large datasets
+
+---
+
+### Task 5.6: Updates & Admin Controllers
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement namhatta updates and admin user management APIs
+
+**Sub-tasks:**
+- [ ] Create `UpdatesController.java` for namhatta program updates
+- [ ] Create `AdminController.java` for user management
+- [ ] Implement supervisor registration endpoints
+- [ ] Add user profile management endpoints
+- [ ] Test all admin and update endpoints
+
+**Updates Controller:**
+
+`UpdatesController.java`:
+```java
+@RestController
+@RequestMapping("/api/updates")
+@Validated
+public class UpdatesController {
+    
+    @Autowired
+    private UpdatesService updatesService;
+    
+    @GetMapping
+    public ResponseEntity<List<UpdateDto>> getUpdates(
+            @RequestParam(required = false) Long namhattaId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        
+        List<String> allowedDistricts = getAllowedDistricts(request);
+        List<UpdateDto> updates = updatesService.getUpdates(namhattaId, page, size, allowedDistricts);
+        
+        return ResponseEntity.ok(updates);
+    }
+    
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('OFFICE')")
+    public ResponseEntity<UpdateDto> createUpdate(@Valid @RequestBody CreateUpdateDto dto) {
+        
+        UpdateDto createdUpdate = updatesService.createUpdate(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUpdate);
+    }
+    
+    private List<String> getAllowedDistricts(HttpServletRequest request) {
+        String userRole = (String) request.getAttribute("userRole");
+        
+        if ("DISTRICT_SUPERVISOR".equals(userRole)) {
+            List<String> districtCodes = (List<String>) request.getAttribute("userDistricts");
+            return convertDistrictCodesToNames(districtCodes);
+        }
+        
+        return null; // Admin and Office can access all
+    }
+}
+```
+
+**Admin Controller:**
+
+`AdminController.java`:
+```java
+@RestController
+@RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
+@Validated
+public class AdminController {
+    
+    @Autowired
+    private UserService userService;
+    
+    @GetMapping("/users")
+    public ResponseEntity<Page<UserDto>> getUsers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+        
+        Page<UserDto> users = userService.getUsers(page, size, search);
+        return ResponseEntity.ok(users);
+    }
+    
+    @PostMapping("/users")
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserDto dto) {
+        
+        UserDto createdUser = userService.createUser(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+    
+    @PostMapping("/supervisor-registration")
+    public ResponseEntity<UserDto> registerSupervisor(@Valid @RequestBody SupervisorRegistrationDto dto) {
+        
+        UserDto supervisor = userService.registerSupervisor(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(supervisor);
+    }
+    
+    @GetMapping("/district-supervisors")
+    public ResponseEntity<List<UserDto>> getDistrictSupervisors(@RequestParam String district) {
+        
+        List<UserDto> supervisors = userService.getDistrictSupervisors(district);
+        return ResponseEntity.ok(supervisors);
+    }
+    
+    @GetMapping("/user-address-defaults/{userId}")
+    public ResponseEntity<AddressDefaultsDto> getUserAddressDefaults(@PathVariable Long userId) {
+        
+        AddressDefaultsDto defaults = userService.getUserAddressDefaults(userId);
+        return ResponseEntity.ok(defaults);
+    }
+}
+```
+
+**Validation Criteria:**
+- [ ] Updates CRUD operations work correctly
+- [ ] User management endpoints functional
+- [ ] Supervisor registration workflow works
+- [ ] District-based filtering for updates
+- [ ] Role-based access control enforced
+
+---
+
+## Phase 6: Error Handling & Infrastructure
+
+### Task 6.1: Global Exception Handling
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement comprehensive error handling matching Node.js error responses
+
+**Sub-tasks:**
+- [ ] Create `GlobalExceptionHandler.java` for centralized error handling
+- [ ] Implement custom exceptions for domain-specific errors
+- [ ] Configure validation error responses
+- [ ] Add logging for all exceptions
+- [ ] Test error scenarios
+
+**Global Exception Handler:**
+
+`GlobalExceptionHandler.java`:
+```java
+@RestControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+    
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException ex) {
+        log.warn("Validation error: {}", ex.getMessage());
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .error("Validation failed")
+            .message(ex.getMessage())
+            .details(ex.getDetails())
+            .build();
+            
+        return ResponseEntity.badRequest().body(error);
+    }
+    
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEntityNotFound(EntityNotFoundException ex) {
+        log.warn("Entity not found: {}", ex.getMessage());
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .error("Resource not found")
+            .message(ex.getMessage())
+            .build();
+            
+        return ResponseEntity.notFound().build();
+    }
+    
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .error("Access denied")
+            .message("You don't have permission to access this resource")
+            .build();
+            
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+    
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Authentication failed: {}", ex.getMessage());
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .error("Invalid credentials")
+            .build();
+            
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+    
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        log.error("Unexpected error", ex);
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .error("Internal server error")
+            .message("An unexpected error occurred")
+            .build();
+            
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+}
+```
+
+**Error Response DTO:**
+
+`ErrorResponse.java`:
+```java
+@Data
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ErrorResponse {
+    private String error;
+    private String message;
+    private List<String> details;
+    private String timestamp;
+    
+    @JsonIgnore
+    public static ErrorResponseBuilder builder() {
+        return new ErrorResponseBuilder().timestamp(Instant.now().toString());
+    }
+}
+```
+
+**Validation Criteria:**
+- [ ] All exception types handled appropriately
+- [ ] Error response format matches Node.js exactly
+- [ ] Validation errors include detailed field information
+- [ ] Security exceptions don't leak sensitive information
+- [ ] All errors are properly logged
+
+---
+
+### Task 6.2: Monitoring & Health Checks
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement application monitoring and health checks
+
+**Sub-tasks:**
+- [ ] Configure Spring Boot Actuator
+- [ ] Create custom health indicators
+- [ ] Set up application metrics
+- [ ] Configure logging levels
+- [ ] Test monitoring endpoints
+
+**Health Check Configuration:**
+
+`HealthCheckConfig.java`:
+```java
+@Configuration
+public class HealthCheckConfig {
+    
+    @Bean
+    public HealthIndicator databaseHealthIndicator(DataSource dataSource) {
+        return new DataSourceHealthIndicator(dataSource);
+    }
+    
+    @Bean
+    public HealthIndicator authHealthIndicator() {
+        return () -> {
+            try {
+                // Check if JWT secret is configured
+                String jwtSecret = environment.getProperty("jwt.secret");
+                if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+                    return Health.down().withDetail("reason", "JWT secret not configured").build();
+                }
+                
+                return Health.up().withDetail("status", "Authentication system healthy").build();
+            } catch (Exception e) {
+                return Health.down(e).build();
+            }
+        };
+    }
+}
+```
+
+**Validation Criteria:**
+- [ ] `/api/health` endpoint matches Node.js response
+- [ ] Database health check works
+- [ ] Custom health indicators report correctly
+- [ ] Metrics are collected properly
+- [ ] Logging configuration is appropriate
 - [ ] Test all public and protected endpoints
 
 **Validation Criteria:**
