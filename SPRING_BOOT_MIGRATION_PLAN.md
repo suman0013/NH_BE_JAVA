@@ -46,15 +46,100 @@ Since we're using the **same database**, no Flyway migrations are needed. The Sp
 11. **user_sessions** - Single login enforcement
 12. **jwt_blacklist** - Token invalidation
 
-### Current API Endpoints (25+ endpoints to migrate)
-All endpoints will maintain exact same behavior:
-- `/api/auth/*` - Authentication system (login, logout, verify)
-- `/api/devotees/*` - Devotee CRUD operations
-- `/api/namhattas/*` - Namhatta CRUD operations
-- `/api/statuses/*` - Status management
-- `/api/hierarchy/*` - Leadership hierarchy
-- `/api/geography/*` - Location data (countries, states, districts)
-- `/api/dashboard/*` - Statistics and analytics
+### Current API Endpoints (60+ endpoints to migrate)
+
+**📋 REFERENCE DOCUMENT**: See `COMPLETE_API_SPECIFICATIONS.md` for detailed specifications of all 60+ endpoints with exact request/response formats, authentication requirements, and implementation notes.
+All endpoints will maintain exact same behavior and response formats as documented in API_DOCUMENTATION.md:
+
+**Authentication APIs (6 endpoints)**
+- `/api/auth/*` - Authentication system (login, logout, verify, user-districts, dev endpoints)
+
+**System APIs (2 endpoints)**
+- `/api/health` - Health check endpoint
+- `/api/about` - System information endpoint
+
+**Geography APIs (8 endpoints)** 
+- `/api/countries`, `/api/states`, `/api/districts`, `/api/sub-districts`, `/api/villages`
+- `/api/pincodes`, `/api/pincodes/search`, `/api/address-by-pincode`
+
+**Map Data APIs (5 endpoints)**
+- `/api/map/*` - Namhatta counts by geographic levels
+
+**Dashboard APIs (2 endpoints)**
+- `/api/dashboard` - Summary statistics
+- `/api/status-distribution` - Status distribution data
+
+**Hierarchy APIs (2 endpoints)**
+- `/api/hierarchy` - Top-level hierarchy
+- `/api/hierarchy/:level` - Leaders by level
+
+**Devotees APIs (8 endpoints)**
+- Full CRUD operations with district filtering and status management
+
+**Namhattas APIs (12 endpoints)**
+- Full CRUD operations with approval workflow and sub-resources
+
+**Statuses APIs (3 endpoints)**
+- `/api/statuses` - CRUD operations for devotional statuses
+
+**Gurudevs APIs (2 endpoints)**
+- `/api/gurudevs` - CRUD operations for spiritual teachers
+
+**Shraddhakutirs APIs (2 endpoints)**
+- `/api/shraddhakutirs` - Regional spiritual units management
+
+**Updates APIs (2 endpoints)**
+- `/api/updates` - Namhatta program updates
+
+**Admin APIs (5 endpoints)**
+- `/api/admin/*` - User management and supervisor registration
+
+**Additional APIs (3 endpoints)**
+- District supervisors, user profiles, development endpoints
+
+## Complete API Endpoint Specifications
+
+**CRITICAL**: All Spring Boot endpoints must match the exact URLs, request formats, response formats, status codes, and authentication requirements specified in `API_DOCUMENTATION.md`. 
+
+**📋 DETAILED SPECIFICATIONS**: Complete endpoint specifications with exact request/response formats are documented in `COMPLETE_API_SPECIFICATIONS.md`.
+
+### API Categories Summary:
+1. **Authentication APIs** - JWT-based auth with HTTP-only cookies
+2. **System APIs** - Health checks and system info
+3. **Geography APIs** - Location hierarchy data
+4. **Map Data APIs** - Namhatta distribution statistics
+5. **Dashboard APIs** - Analytics and summaries  
+6. **Hierarchy APIs** - Leadership structure
+7. **Devotees APIs** - Devotee management with district filtering
+8. **Namhattas APIs** - Spiritual center management with approval workflow
+9. **Statuses APIs** - Devotional status management
+10. **Gurudevs APIs** - Spiritual teacher management
+11. **Shraddhakutirs APIs** - Regional unit management
+12. **Updates APIs** - Program update tracking
+13. **Admin APIs** - User and supervisor management
+14. **Additional APIs** - Supporting functionality
+
+### Rate Limiting Requirements:
+- **Login API**: 5 attempts per 15 minutes per IP
+- **General APIs**: 100 requests per 15 minutes per IP  
+- **Modification APIs** (POST/PUT/DELETE): 10 requests per minute per IP
+
+### Authentication Requirements:
+- **Method**: JWT tokens in HTTP-only cookies
+- **Session Duration**: 1 hour
+- **Single Login**: Only one active session per user
+- **Token Blacklisting**: Logout invalidates tokens immediately
+- **Role-based Access**: ADMIN, OFFICE, DISTRICT_SUPERVISOR with district filtering
+
+### Error Response Format:
+All APIs must use consistent error response format:
+```json
+{
+  "error": "Error message",
+  "message": "Detailed error message (sometimes)", 
+  "details": "Validation errors array (for validation failures)"
+}
+```
 
 ## Detailed Migration Tasks
 
