@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: namhatta-management-system
+    
+  datasource:
+    url: ${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      leak-detection-threshold: 60000
+      pool-name: NamhattaHikariCP
+      
+  jpa:
+    hibernate:
+      ddl-auto: none  # IMPORTANT: Don't modify existing schema
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        
+  # Redis configuration for rate limiting and caching
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      
+server:
+  port: ${PORT:5000}  # Same port as Node.js version
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+    
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600000  # 1 hour (3600000ms) same as Node.js
+  
+# Session Configuration
+session:
+  secret: ${SESSION_SECRET}
+  
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      
+# Logging configuration
+logging:
+  level:
+    com.namhatta: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/namhatta-app.log
+    
+# Swagger/OpenAPI configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    groups-order: DESC
+    operations-sorter: method
+    disable-swagger-default-url: true
+    use-root-path: true
