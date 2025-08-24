@@ -1,7 +1,9 @@
 package com.namhatta.controller;
 
+import com.namhatta.service.GeographicService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,31 +16,34 @@ import java.util.*;
 @CrossOrigin(allowCredentials = "true")
 public class GeographicController {
     
+    private final GeographicService geographicService;
+    
     @GetMapping("/countries")
     public ResponseEntity<List<String>> getCountries() {
         log.debug("Getting countries list");
-        // Return India as primary country - same as Node.js implementation
-        List<String> countries = Arrays.asList("India");
-        return ResponseEntity.ok(countries);
+        
+        try {
+            List<String> countries = geographicService.getCountries();
+            return ResponseEntity.ok(countries);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving countries", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
     }
     
     @GetMapping("/states")
     public ResponseEntity<List<String>> getStatesByCountry(@RequestParam String country) {
         log.debug("Getting states for country: {}", country);
         
-        if (!"India".equals(country)) {
-            return ResponseEntity.ok(new ArrayList<>());
+        try {
+            List<String> states = geographicService.getStatesByCountry(country);
+            return ResponseEntity.ok(states);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving states for country: {}", country, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        // Return major Indian states - same as Node.js implementation
-        List<String> states = Arrays.asList(
-            "West Bengal", "Odisha", "Assam", "Bihar", "Maharashtra", "Gujarat", 
-            "Delhi", "Haryana", "Karnataka", "Tamil Nadu", "Andhra Pradesh", 
-            "Telangana", "Kerala", "Punjab", "Rajasthan", "Uttar Pradesh",
-            "Madhya Pradesh", "Jharkhand", "Chhattisgarh"
-        );
-        
-        return ResponseEntity.ok(states);
     }
     
     @GetMapping("/districts") 
@@ -47,27 +52,14 @@ public class GeographicController {
             @RequestParam String state) {
         log.debug("Getting districts for country: {} and state: {}", country, state);
         
-        if (!"India".equals(country) || state == null || state.trim().isEmpty()) {
-            return ResponseEntity.ok(new ArrayList<>());
+        try {
+            List<String> districts = geographicService.getDistrictsByState(country, state);
+            return ResponseEntity.ok(districts);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving districts for state: {}", state, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        // Return sample districts - in real implementation would query database
-        List<String> districts = new ArrayList<>();
-        switch (state) {
-            case "West Bengal":
-                districts.addAll(Arrays.asList("Kolkata", "Hooghly", "Howrah", "24 Parganas North", 
-                    "24 Parganas South", "Bardhaman", "Nadia", "Murshidabad"));
-                break;
-            case "Odisha":
-                districts.addAll(Arrays.asList("Bhubaneswar", "Cuttack", "Puri", "Ganjam", 
-                    "Khordha", "Mayurbhanj", "Balasore"));
-                break;
-            default:
-                // Return empty list for other states
-                break;
-        }
-        
-        return ResponseEntity.ok(districts);
     }
     
     @GetMapping("/sub-districts")
@@ -78,13 +70,14 @@ public class GeographicController {
             @RequestParam(required = false) String pincode) {
         log.debug("Getting sub-districts for district: {}", district);
         
-        if (!"India".equals(country) || district == null || district.trim().isEmpty()) {
-            return ResponseEntity.ok(new ArrayList<>());
+        try {
+            List<String> subDistricts = geographicService.getSubDistrictsByDistrict(country, state, district, pincode);
+            return ResponseEntity.ok(subDistricts);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving sub-districts for district: {}", district, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        // Return sample sub-districts - in real implementation would query database
-        List<String> subDistricts = Arrays.asList("Block 1", "Block 2", "Block 3");
-        return ResponseEntity.ok(subDistricts);
     }
     
     @GetMapping("/villages")
@@ -96,13 +89,14 @@ public class GeographicController {
             @RequestParam(required = false) String pincode) {
         log.debug("Getting villages for sub-district: {}", subDistrict);
         
-        if (!"India".equals(country) || subDistrict == null || subDistrict.trim().isEmpty()) {
-            return ResponseEntity.ok(new ArrayList<>());
+        try {
+            List<String> villages = geographicService.getVillagesBySubDistrict(country, state, district, subDistrict, pincode);
+            return ResponseEntity.ok(villages);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving villages for sub-district: {}", subDistrict, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        // Return sample villages - in real implementation would query database
-        List<String> villages = Arrays.asList("Village A", "Village B", "Village C");
-        return ResponseEntity.ok(villages);
     }
     
     @GetMapping("/pincodes")
@@ -113,36 +107,45 @@ public class GeographicController {
             @RequestParam(required = false) String search) {
         log.debug("Getting pincodes for country: {}, search: {}", country, search);
         
-        // Return sample pincode response - same format as Node.js
-        List<String> pincodes = Arrays.asList("700001", "700002", "700003", "700004", "700005");
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("pincodes", pincodes);
-        response.put("total", pincodes.size());
-        response.put("hasMore", false);
-        
-        return ResponseEntity.ok(response);
+        try {
+            Map<String, Object> response = geographicService.getPincodes(country, page, limit, search);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving pincodes", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to retrieve pincodes");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
     
     @GetMapping("/pincodes/search")
     public ResponseEntity<List<String>> searchPincodes(@RequestParam String q) {
         log.debug("Searching pincodes with query: {}", q);
         
-        // Return filtered pincodes based on search query
-        List<String> matchingPincodes = Arrays.asList("700001", "700012", "700015");
-        return ResponseEntity.ok(matchingPincodes);
+        try {
+            List<String> matchingPincodes = geographicService.searchPincodes(q);
+            return ResponseEntity.ok(matchingPincodes);
+            
+        } catch (Exception e) {
+            log.error("Error searching pincodes with query: {}", q, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
     }
     
     @GetMapping("/address-by-pincode")
     public ResponseEntity<Map<String, Object>> getAddressByPincode(@RequestParam String pincode) {
         log.debug("Getting address for pincode: {}", pincode);
         
-        // Return sample address data - same format as Node.js
-        Map<String, Object> address = new HashMap<>();
-        address.put("country", "India");
-        address.put("state", "West Bengal");
-        address.put("district", "Kolkata");
-        
-        return ResponseEntity.ok(address);
+        try {
+            Map<String, Object> address = geographicService.getAddressByPincode(pincode);
+            return ResponseEntity.ok(address);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving address for pincode: {}", pincode, e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to retrieve address");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }
