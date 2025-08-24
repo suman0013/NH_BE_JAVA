@@ -16,7 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@ToString(exclude = {"passwordHash", "districts"})
+@ToString(exclude = {"passwordHash"})
 @Slf4j
 @Schema(description = "User entity for authentication and authorization")
 public class User {

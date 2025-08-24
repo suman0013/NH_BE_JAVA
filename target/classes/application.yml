@@ -3,7 +3,7 @@ spring:
     name: namhatta-management-system
     
   datasource:
-    url: jdbc:${DATABASE_URL}
+    url: jdbc:postgresql://ep-calm-silence-a15zko7l-pooler.ap-southeast-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_5MIwCD4YhSdP&sslmode=require&channelBinding=require
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

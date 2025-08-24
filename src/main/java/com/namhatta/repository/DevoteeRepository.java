@@ -52,29 +52,31 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
     
     /**
      * Find devotees in specific districts (for district supervisor filtering)
+     * TODO: Implement when address relationship is properly defined
      */
-    @Query("""
-        SELECT d FROM Devotee d 
-        JOIN d.addresses da 
-        JOIN da.address a 
-        WHERE a.districtNameEnglish IN :districts
-        """)
-    Page<Devotee> findByDistrictsIn(@Param("districts") List<String> districts, Pageable pageable);
+    // @Query("""
+    //     SELECT d FROM Devotee d 
+    //     JOIN d.addresses da 
+    //     JOIN da.address a 
+    //     WHERE a.districtNameEnglish IN :districts
+    //     """)
+    // Page<Devotee> findByDistrictsIn(@Param("districts") List<String> districts, Pageable pageable);
     
     /**
      * Search devotees with district filtering
+     * TODO: Implement when address relationship is properly defined
      */
-    @Query("""
-        SELECT d FROM Devotee d 
-        JOIN d.addresses da 
-        JOIN da.address a 
-        WHERE (LOWER(d.legalName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) 
-            OR LOWER(d.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
-        AND a.districtNameEnglish IN :districts
-        """)
-    Page<Devotee> searchByNameInDistricts(@Param("searchTerm") String searchTerm, 
-                                         @Param("districts") List<String> districts, 
-                                         Pageable pageable);
+    // @Query("""
+    //     SELECT d FROM Devotee d 
+    //     JOIN d.addresses da 
+    //     JOIN da.address a 
+    //     WHERE (LOWER(d.legalName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) 
+    //         OR LOWER(d.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+    //     AND a.districtNameEnglish IN :districts
+    //     """)
+    // Page<Devotee> searchByNameInDistricts(@Param("searchTerm") String searchTerm, 
+    //                                      @Param("districts") List<String> districts, 
+    //                                      Pageable pageable);
     
     /**
      * Count devotees by devotional status
@@ -88,14 +90,15 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
     
     /**
      * Count devotees in districts
+     * TODO: Implement when address relationship is properly defined
      */
-    @Query("""
-        SELECT COUNT(DISTINCT d) FROM Devotee d 
-        JOIN d.addresses da 
-        JOIN da.address a 
-        WHERE a.districtNameEnglish IN :districts
-        """)
-    long countDevoteesInDistricts(@Param("districts") List<String> districts);
+    // @Query("""
+    //     SELECT COUNT(DISTINCT d) FROM Devotee d 
+    //     JOIN d.addresses da 
+    //     JOIN da.address a 
+    //     WHERE a.districtNameEnglish IN :districts
+    //     """)
+    // long countDevoteesInDistricts(@Param("districts") List<String> districts);
     
     /**
      * Find devotees with specific initiation status

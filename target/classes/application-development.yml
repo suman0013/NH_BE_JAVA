@@ -1,8 +1,12 @@
+server:
+  port: ${PORT:5000}
+  address: 0.0.0.0
+
 spring:
   profiles:
     active: development
   datasource:
-    url: ${DATABASE_URL}
+    url: jdbc:postgresql://ep-calm-silence-a15zko7l-pooler.ap-southeast-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_5MIwCD4YhSdP&sslmode=require&channelBinding=require
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

@@ -42,9 +42,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     /**
      * Find users with specific role in a district (for district supervisors)
+     * TODO: Implement proper district relationship query when districts field is added to User entity
      */
-    @Query("SELECT u FROM User u JOIN u.districts d WHERE u.role = :role AND d.code = :districtCode AND u.isActive = true")
-    List<User> findActiveUsersInDistrict(@Param("role") UserRole role, @Param("districtCode") String districtCode);
+    // List<User> findActiveUsersInDistrict(@Param("role") UserRole role, @Param("districtCode") String districtCode);
     
     /**
      * Count total active users

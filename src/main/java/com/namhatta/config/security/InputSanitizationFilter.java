@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class InputSanitizationFilter {
     
     @Bean
-    public FilterRegistrationBean<SanitizationFilter> inputSanitizationFilter() {
+    public FilterRegistrationBean<SanitizationFilter> requestSanitizationFilter() {
         FilterRegistrationBean<SanitizationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new SanitizationFilter());
         registrationBean.addUrlPatterns("/api/*");

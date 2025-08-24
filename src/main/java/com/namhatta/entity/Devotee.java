@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@ToString(exclude = {"devotionalStatus", "namhatta", "shraddhakutir", "addresses"})
+@ToString(exclude = {"devotionalStatus", "namhatta", "shraddhakutir"})
 @Slf4j
 @Schema(description = "Devotee information and spiritual progress")
 public class Devotee {
