@@ -4,11 +4,18 @@
  * Get the API base URL from environment variables
  * Defaults to localhost:5000 for development
  * Can be overridden with VITE_API_BASE_URL environment variable
+ * Now supports Spring Boot backend switching with VITE_USE_SPRING_BOOT
  */
 export const getApiBaseUrl = (): string => {
   // Check if we should use external backend
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Check if we should use Spring Boot backend (same port, same endpoints)
+  if (import.meta.env.VITE_USE_SPRING_BOOT === 'true') {
+    console.log('🔄 Switching to Spring Boot backend');
+    return ''; // Use relative URLs - Spring Boot runs on same port (5000)
   }
   
   // In development, use relative URLs since both frontend and backend are served from same port
@@ -53,6 +60,13 @@ export const isDevelopment = (): boolean => {
 };
 
 /**
+ * Check if we're using Spring Boot backend
+ */
+export const isUsingSpringBoot = (): boolean => {
+  return import.meta.env.VITE_USE_SPRING_BOOT === 'true';
+};
+
+/**
  * Log API configuration (useful for debugging)
  */
 export const logApiConfig = (): void => {
@@ -61,6 +75,8 @@ export const logApiConfig = (): void => {
       baseUrl: getApiBaseUrl(),
       mode: import.meta.env.MODE,
       isDev: isDevelopment(),
+      usingSpringBoot: isUsingSpringBoot(),
+      backend: isUsingSpringBoot() ? 'Spring Boot' : 'Node.js Express'
     });
   }
 };
