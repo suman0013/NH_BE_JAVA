@@ -1,19 +1,34 @@
 package com.namhatta.config;
 
+import com.namhatta.security.JwtAuthenticationEntryPoint;
+import com.namhatta.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
-
+    
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         log.info("Configuring Spring Security filter chain");
@@ -36,11 +51,55 @@ public class SecurityConfig {
                 }))
             .csrf(csrf -> csrf.disable()) // Using JWT instead
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/health", "/api/about").permitAll()
+                // Public endpoints (same as Node.js)
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/health", "/api/about").permitAll()
+                .requestMatchers("/api/countries", "/api/states", "/api/districts").permitAll()
+                .requestMatchers("/api/sub-districts", "/api/villages", "/api/pincodes/**").permitAll()
+                .requestMatchers("/api/address-by-pincode").permitAll()
+                
+                // Swagger/OpenAPI endpoints
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/api/files/**").permitAll() // Allow file access
-                .anyRequest().authenticated())
+                
+                // Protected endpoints with role-based access
+                .requestMatchers(HttpMethod.GET, "/api/devotees/**").hasAnyRole("ADMIN", "OFFICE", "DISTRICT_SUPERVISOR")
+                .requestMatchers(HttpMethod.POST, "/api/devotees/**").hasAnyRole("ADMIN", "OFFICE")
+                .requestMatchers(HttpMethod.PUT, "/api/devotees/**").hasAnyRole("ADMIN", "OFFICE")
+                .requestMatchers(HttpMethod.DELETE, "/api/devotees/**").hasRole("ADMIN")
+                
+                .requestMatchers(HttpMethod.GET, "/api/namhattas/**").hasAnyRole("ADMIN", "OFFICE", "DISTRICT_SUPERVISOR")
+                .requestMatchers(HttpMethod.POST, "/api/namhattas/**").hasAnyRole("ADMIN", "OFFICE")
+                .requestMatchers(HttpMethod.PUT, "/api/namhattas/**").hasAnyRole("ADMIN", "OFFICE")
+                .requestMatchers(HttpMethod.DELETE, "/api/namhattas/**").hasRole("ADMIN")
+                
+                .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "OFFICE", "DISTRICT_SUPERVISOR")
+                .requestMatchers("/api/hierarchy/**").hasAnyRole("ADMIN", "OFFICE", "DISTRICT_SUPERVISOR")
+                .requestMatchers("/api/status-distribution/**").hasAnyRole("ADMIN", "OFFICE", "DISTRICT_SUPERVISOR")
+                .requestMatchers("/api/map/**").hasAnyRole("ADMIN", "OFFICE", "DISTRICT_SUPERVISOR")
+                
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/district-supervisors/**").hasAnyRole("ADMIN", "OFFICE")
+                
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
+    }
+    
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        log.info("Configuring BCrypt password encoder with 12 rounds (same as Node.js)");
+        return new BCryptPasswordEncoder(12); // Same rounds as Node.js
+    }
+    
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authConfig) throws Exception {
+        log.info("Configuring authentication manager");
+        return authConfig.getAuthenticationManager();
     }
 }

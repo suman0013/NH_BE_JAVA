@@ -82,6 +82,13 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         
+        <!-- Rate Limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+        
         <!-- Input Sanitization -->
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
