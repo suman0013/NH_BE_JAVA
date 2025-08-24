@@ -24,7 +24,7 @@ public class Shraddhakutir {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "Shraddhakutir unique identifier", example = "1")
-    private Long id;
+    private Integer id;
     
     @Column(nullable = false)
     @Schema(description = "Shraddhakutir name", example = "Kolkata Shraddhakutir", required = true)

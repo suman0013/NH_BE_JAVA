@@ -3,8 +3,6 @@ server:
   address: 0.0.0.0
 
 spring:
-  profiles:
-    active: development
   datasource:
     url: jdbc:postgresql://ep-calm-silence-a15zko7l-pooler.ap-southeast-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_5MIwCD4YhSdP&sslmode=require&channelBinding=require
     driver-class-name: org.postgresql.Driver
