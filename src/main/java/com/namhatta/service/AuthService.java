@@ -5,8 +5,12 @@ import com.namhatta.dto.LoginRequest;
 import com.namhatta.dto.LoginResponse;
 import com.namhatta.dto.UserDto;
 import com.namhatta.entity.User;
+import com.namhatta.entity.UserRole;
 import com.namhatta.repository.UserRepository;
+import com.namhatta.repository.NamhattaRepository;
 import com.namhatta.security.JwtTokenProvider;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,6 +34,7 @@ public class AuthService {
     private final SessionService sessionService;
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final NamhattaRepository namhattaRepository;
     
     /**
      * Authenticate user with username and password
@@ -75,7 +80,7 @@ public class AuthService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole().name())
-                .districts(java.util.Collections.emptyList()) // TODO: Implement district relationship
+                .districts(getUserDistricts(user)) // Get districts based on namhatta supervision
                 .build();
             
             LoginResponse response = LoginResponse.builder()
@@ -140,7 +145,33 @@ public class AuthService {
             .id(user.getId())
             .username(user.getUsername())
             .role(user.getRole().name())
-            .districts(java.util.Collections.emptyList()) // TODO: Implement district relationship
+            .districts(getUserDistricts(user)) // Get districts based on namhatta supervision
             .build();
+    }
+    
+    /**
+     * Get districts managed by a user based on their role and namhatta supervision
+     */
+    private List<DistrictDto> getUserDistricts(User user) {
+        try {
+            if (user.getRole() == UserRole.DISTRICT_SUPERVISOR) {
+                List<Object[]> districtData = namhattaRepository.getDistrictsBySupervisor(user);
+                return districtData.stream()
+                    .map(row -> {
+                        String districtName = (String) row[0];
+                        return DistrictDto.builder()
+                            .code(districtName)
+                            .name(districtName)
+                            .build();
+                    })
+                    .collect(Collectors.toList());
+            } else {
+                // Admin/Office users don't have specific district restrictions
+                return List.of();
+            }
+        } catch (Exception e) {
+            log.warn("Error getting districts for user {}: {}", user.getUsername(), e.getMessage());
+            return List.of();
+        }
     }
 }

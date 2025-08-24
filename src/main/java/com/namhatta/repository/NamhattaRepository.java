@@ -150,4 +150,61 @@ public interface NamhattaRepository extends JpaRepository<Namhatta, Long> {
         AND a.districtNameEnglish IN :districts
         """)
     long countByIsApprovedAndDistricts(@Param("isApproved") Boolean isApproved, @Param("districts") List<String> districts);
+    
+    /**
+     * Count namhattas by sub-district
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT n) FROM Namhatta n 
+        JOIN NamhattaAddress na ON na.namhatta = n
+        JOIN na.address a 
+        WHERE a.subdistrictNameEnglish = :subdistrict
+        AND n.isActive = true
+        """)
+    long countBySubdistrict(@Param("subdistrict") String subdistrict);
+    
+    /**
+     * Count namhattas by district
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT n) FROM Namhatta n 
+        JOIN NamhattaAddress na ON na.namhatta = n
+        JOIN na.address a 
+        WHERE a.districtNameEnglish = :district
+        AND n.isActive = true
+        """)
+    long countByDistrict(@Param("district") String district);
+    
+    /**
+     * Get namhattas by sub-district with devotee count
+     */
+    @Query("""
+        SELECT new map(
+            n.id as id,
+            n.name as name,
+            COALESCE(COUNT(d), 0) as devoteeCount
+        )
+        FROM Namhatta n 
+        LEFT JOIN n.devotees d
+        JOIN NamhattaAddress na ON na.namhatta = n
+        JOIN na.address a 
+        WHERE a.subdistrictNameEnglish = :subdistrict
+        AND n.isActive = true
+        GROUP BY n.id, n.name
+        """)
+    List<java.util.Map<String, Object>> getNamhattasBySubdistrict(@Param("subdistrict") String subdistrict);
+    
+    /**
+     * Get districts managed by a supervisor
+     */
+    @Query("""
+        SELECT DISTINCT a.districtNameEnglish
+        FROM Namhatta n 
+        JOIN NamhattaAddress na ON na.namhatta = n
+        JOIN na.address a 
+        WHERE n.districtSupervisor = :supervisor
+        AND n.isActive = true
+        AND a.districtNameEnglish IS NOT NULL
+        """)
+    List<Object[]> getDistrictsBySupervisor(@Param("supervisor") User supervisor);
 }

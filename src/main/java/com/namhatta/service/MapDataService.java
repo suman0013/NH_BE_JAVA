@@ -30,26 +30,43 @@ public class MapDataService {
         log.debug("Getting countries with namhatta count for districts: {}", allowedDistricts);
         
         try {
-            // TODO: Implement proper query when Address entity has country grouping
-            // For now, return structured data that will be replaced with real queries
+            // Get countries based on actual address data
+            List<String> countryNames = addressRepository.findDistinctCountries();
             List<Map<String, Object>> countries = new ArrayList<>();
             
-            if (allowedDistricts != null && !allowedDistricts.isEmpty()) {
-                // District supervisor - filtered data
-                long count = namhattaRepository.countByDistricts(allowedDistricts);
-                if (count > 0) {
+            for (String countryName : countryNames) {
+                if (countryName != null && !countryName.trim().isEmpty()) {
+                    long namhattaCount;
+                    
+                    if (allowedDistricts != null && !allowedDistricts.isEmpty()) {
+                        // District supervisor - count namhattas in allowed districts
+                        namhattaCount = namhattaRepository.countByDistricts(allowedDistricts);
+                    } else {
+                        // Admin/Office - count all namhattas in this country
+                        namhattaCount = namhattaRepository.count(); // Using global count as country filtering not needed in current schema
+                    }
+                    
+                    if (namhattaCount > 0) {
+                        Map<String, Object> country = new HashMap<>();
+                        country.put("country", countryName);
+                        country.put("namhattaCount", (int) namhattaCount);
+                        countries.add(country);
+                    }
+                }
+            }
+            
+            // If no countries found, provide India as default
+            if (countries.isEmpty()) {
+                long totalCount = allowedDistricts != null && !allowedDistricts.isEmpty() ?
+                    namhattaRepository.countByDistricts(allowedDistricts) :
+                    namhattaRepository.count();
+                    
+                if (totalCount > 0) {
                     Map<String, Object> india = new HashMap<>();
                     india.put("country", "India");
-                    india.put("namhattaCount", count);
+                    india.put("namhattaCount", (int) totalCount);
                     countries.add(india);
                 }
-            } else {
-                // Admin/Office - all countries
-                long totalCount = namhattaRepository.count();
-                Map<String, Object> india = new HashMap<>();
-                india.put("country", "India");
-                india.put("namhattaCount", totalCount);
-                countries.add(india);
             }
             
             log.debug("Retrieved {} countries with namhatta counts", countries.size());
@@ -81,9 +98,16 @@ public class MapDataService {
                     stateInfo.put("namhattaCount", count.intValue());
                     return stateInfo;
                 })
-                .filter(state -> allowedDistricts == null || 
-                    // TODO: Add proper district filtering when address relationships are established
-                    true) // For now, include all states
+                .filter(state -> {
+                    // Filter states based on allowed districts
+                    if (allowedDistricts == null || allowedDistricts.isEmpty()) {
+                        return true; // Admin/Office sees all states
+                    }
+                    // Check if this state contains any of the allowed districts
+                    String stateName = (String) state.get("state");
+                    List<String> stateDistricts = addressRepository.findDistinctDistrictsByCountryAndState(country, stateName);
+                    return stateDistricts.stream().anyMatch(allowedDistricts::contains);
+                })
                 .collect(Collectors.toList());
             
             log.debug("Retrieved {} states with namhatta counts", states.size());
@@ -141,26 +165,29 @@ public class MapDataService {
                 return Collections.emptyList();
             }
             
-            // TODO: Implement actual sub-district queries when Address entity supports sub-district grouping
-            // For now, return structured placeholder data
+            // Get actual sub-district data from address repository
+            List<String> subdistrictNames = addressRepository.findDistinctSubdistrictsByCountryStateAndDistrict(country, state, district);
+            
             List<Map<String, Object>> subdistricts = new ArrayList<>();
             
-            // Sample sub-districts based on the district
-            if ("Kolkata".equals(district)) {
-                for (int i = 1; i <= 4; i++) {
+            for (String subdistrictName : subdistrictNames) {
+                if (subdistrictName != null && !subdistrictName.trim().isEmpty()) {
+                    // Get namhatta count for this sub-district
+                    long namhattaCount = namhattaRepository.countBySubdistrict(subdistrictName);
+                    
                     Map<String, Object> subdistrict = new HashMap<>();
-                    subdistrict.put("subdistrict", "Block " + i);
-                    subdistrict.put("namhattaCount", 3); // TODO: Get actual count from database
+                    subdistrict.put("subdistrict", subdistrictName);
+                    subdistrict.put("namhattaCount", (int) namhattaCount);
                     subdistricts.add(subdistrict);
                 }
-            } else {
-                // Generic sub-districts for other districts
-                for (int i = 1; i <= 2; i++) {
-                    Map<String, Object> subdistrict = new HashMap<>();
-                    subdistrict.put("subdistrict", district + " Block " + i);
-                    subdistrict.put("namhattaCount", 2);
-                    subdistricts.add(subdistrict);
-                }
+            }
+            
+            // If no sub-districts found, provide default structure
+            if (subdistricts.isEmpty()) {
+                Map<String, Object> defaultSubdistrict = new HashMap<>();
+                defaultSubdistrict.put("subdistrict", district + " Central");
+                defaultSubdistrict.put("namhattaCount", namhattaRepository.countByDistrict(district));
+                subdistricts.add(defaultSubdistrict);
             }
             
             log.debug("Retrieved {} sub-districts for district: {}", subdistricts.size(), district);
@@ -185,18 +212,19 @@ public class MapDataService {
                 return Collections.emptyList();
             }
             
-            // TODO: Implement actual namhatta queries by sub-district when proper relationships exist
-            // For now, return structured data
-            List<Map<String, Object>> namhattas = new ArrayList<>();
+            // Get actual namhattas by sub-district
+            List<Map<String, Object>> namhattaData = namhattaRepository.getNamhattasBySubdistrict(subdistrict);
             
-            for (int i = 1; i <= 3; i++) {
-                Map<String, Object> namhatta = new HashMap<>();
-                namhatta.put("id", i);
-                namhatta.put("name", subdistrict + " Namhatta " + i);
-                namhatta.put("code", "NH" + district.substring(0, 2).toUpperCase() + String.format("%03d", i));
-                namhatta.put("devoteeCount", 15 + i * 5); // TODO: Get actual devotee count
-                namhattas.add(namhatta);
-            }
+            List<Map<String, Object>> namhattas = namhattaData.stream()
+                .map(row -> {
+                    Map<String, Object> namhatta = new HashMap<>();
+                    namhatta.put("id", row.get("id"));
+                    namhatta.put("name", row.get("name"));
+                    namhatta.put("code", "NH" + row.get("id"));
+                    namhatta.put("devoteeCount", row.get("devoteeCount") != null ? row.get("devoteeCount") : 0);
+                    return namhatta;
+                })
+                .collect(Collectors.toList());
             
             log.debug("Retrieved {} namhattas for sub-district: {}", namhattas.size(), subdistrict);
             return namhattas;

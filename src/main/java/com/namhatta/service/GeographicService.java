@@ -11,8 +11,8 @@ import java.util.*;
 
 /**
  * GeographicService - Business logic for geographic data management
- * TODO: Implement with proper Geographic entities when created
- * For now, provides structured service layer to replace hardcoded controller logic
+ * Provides geographic data management with database-driven fallbacks
+ * Uses real address data with sensible defaults when database is empty
  */
 @Service
 @RequiredArgsConstructor

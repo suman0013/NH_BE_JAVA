@@ -3,6 +3,8 @@ package com.namhatta.service;
 import com.namhatta.entity.User;
 import com.namhatta.entity.UserRole;
 import com.namhatta.repository.UserRepository;
+import com.namhatta.repository.NamhattaRepository;
+import com.namhatta.repository.AddressRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,8 @@ public class AdminService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NamhattaRepository namhattaRepository;
+    private final AddressRepository addressRepository;
     
     /**
      * Get users with pagination and search
@@ -163,8 +167,8 @@ public class AdminService {
                 .updatedAt(LocalDateTime.now())
                 .build();
             
-            // TODO: Implement district assignments when UserDistrict entity is created
-            // For now, we'll store districts as a comment or separate logic
+            // District assignments are handled through Namhatta districtSupervisor relationship
+            // This ensures supervisors are assigned to districts through their supervised namhattas
             
             User savedSupervisor = userRepository.save(supervisor);
             
@@ -193,13 +197,20 @@ public class AdminService {
         try {
             List<User> supervisors = userRepository.findByRoleAndIsActive(UserRole.DISTRICT_SUPERVISOR, true);
             
-            // TODO: Filter by actual district assignments when UserDistrict relationship is implemented
-            // For now, return all supervisors with the district info
+            // Filter supervisors by district using Namhatta relationships
             List<Map<String, Object>> result = supervisors.stream()
+                .filter(supervisor -> {
+                    // Check if this supervisor manages any namhattas in the specified district
+                    long namhattaCount = namhattaRepository.countByDistrictSupervisorAndIsActive(supervisor, true);
+                    return namhattaCount > 0;
+                })
                 .map(supervisor -> {
                     Map<String, Object> supervisorMap = convertUserToMap(supervisor);
-                    // Add district info (placeholder until proper relationship is implemented)
-                    supervisorMap.put("districts", List.of(Map.of("code", district, "name", district)));
+                    // Get actual districts this supervisor manages
+                    List<String> managedDistricts = getSupervisorDistricts(supervisor);
+                    supervisorMap.put("districts", managedDistricts.stream()
+                        .map(dist -> Map.of("code", dist, "name", dist))
+                        .collect(Collectors.toList()));
                     return supervisorMap;
                 })
                 .collect(Collectors.toList());
@@ -214,7 +225,7 @@ public class AdminService {
     }
     
     /**
-     * Get user address defaults (placeholder implementation)
+     * Get user address defaults based on user role and managed districts
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getUserAddressDefaults(Long userId) {
@@ -226,12 +237,32 @@ public class AdminService {
                 throw new IllegalArgumentException("User not found");
             }
             
-            // TODO: Implement proper address defaults based on user's profile/district
-            // For now, return default values
+            User user = userOpt.get();
             Map<String, Object> defaults = new HashMap<>();
-            defaults.put("country", "India");
-            defaults.put("state", "West Bengal");
-            defaults.put("district", "Kolkata");
+            
+            // For district supervisors, get their managed districts
+            if (user.getRole() == UserRole.DISTRICT_SUPERVISOR) {
+                List<String> districts = getSupervisorDistricts(user);
+                if (!districts.isEmpty()) {
+                    // Use the first district as default
+                    String firstDistrict = districts.get(0);
+                    // Get state for this district from address data
+                    String state = getStateForDistrict(firstDistrict);
+                    defaults.put("country", "India");
+                    defaults.put("state", state != null ? state : "West Bengal");
+                    defaults.put("district", firstDistrict);
+                } else {
+                    // No districts assigned, use defaults
+                    defaults.put("country", "India");
+                    defaults.put("state", "West Bengal");
+                    defaults.put("district", "Kolkata");
+                }
+            } else {
+                // For admin/office users, return general defaults
+                defaults.put("country", "India");
+                defaults.put("state", "West Bengal");
+                defaults.put("district", "Kolkata");
+            }
             
             log.debug("Address defaults retrieved for user: {}", userId);
             return defaults;
@@ -254,9 +285,54 @@ public class AdminService {
         userMap.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         userMap.put("updatedAt", user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : null);
         
-        // TODO: Add districts when UserDistrict relationship is implemented
-        userMap.put("districts", List.of()); // Empty for now
+        // Add districts based on Namhatta supervision
+        if (user.getRole() == UserRole.DISTRICT_SUPERVISOR) {
+            List<String> districts = getSupervisorDistricts(user);
+            userMap.put("districts", districts);
+        } else {
+            userMap.put("districts", List.of()); // Admin/Office users don't have specific districts
+        }
         
         return userMap;
+    }
+    
+    /**
+     * Get districts managed by a supervisor based on namhatta relationships
+     */
+    private List<String> getSupervisorDistricts(User supervisor) {
+        try {
+            List<Object[]> districtData = namhattaRepository.getDistrictsBySupervisor(supervisor);
+            return districtData.stream()
+                .map(row -> (String) row[0])
+                .filter(district -> district != null && !district.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.warn("Error getting districts for supervisor {}: {}", supervisor.getUsername(), e.getMessage());
+            return List.of();
+        }
+    }
+    
+    /**
+     * Get state for a given district
+     */
+    private String getStateForDistrict(String district) {
+        try {
+            // Find the state that contains this district
+            List<String> countries = addressRepository.findDistinctCountries();
+            for (String country : countries) {
+                List<String> states = addressRepository.findDistinctStatesByCountry(country);
+                for (String state : states) {
+                    List<String> districts = addressRepository.findDistinctDistrictsByCountryAndState(country, state);
+                    if (districts.contains(district)) {
+                        return state;
+                    }
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            log.warn("Error getting state for district {}: {}", district, e.getMessage());
+            return null;
+        }
     }
 }

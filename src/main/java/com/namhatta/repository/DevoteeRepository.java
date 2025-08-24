@@ -213,4 +213,10 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
      * Find devotees by gender
      */
     Page<Devotee> findByGender(String gender, Pageable pageable);
+    
+    /**
+     * Find devotees by namhatta and devotional status
+     */
+    @Query("SELECT d FROM Devotee d WHERE d.namhatta = :namhatta AND d.devotionalStatus.id = :statusId")
+    Page<Devotee> findByNamhattaAndDevotionalStatusId(@Param("namhatta") Namhatta namhatta, @Param("statusId") Long statusId, Pageable pageable);
 }

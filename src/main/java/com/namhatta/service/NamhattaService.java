@@ -36,6 +36,7 @@ public class NamhattaService {
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
     private final NamhattaAddressRepository namhattaAddressRepository;
+    private final DevoteeRepository devoteeRepository;
     private final NamhattaMapper namhattaMapper;
     
     /**
@@ -225,14 +226,36 @@ public class NamhattaService {
             }
         }
         
-        // This would require a DevoteeRepository method - placeholder for now
-        // In a real implementation, we'd fetch devotees for this namhatta
+        // Get devotees for this namhatta using DevoteeRepository
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        Page<Devotee> devoteePage;
+        
+        if (statusId != null) {
+            devoteePage = devoteeRepository.findByNamhattaAndDevotionalStatusId(namhatta, statusId, pageable);
+        } else {
+            devoteePage = devoteeRepository.findByNamhatta(namhatta, pageable);
+        }
+        
+        List<DevoteeDto> devoteeDtos = devoteePage.getContent().stream()
+                .map(devotee -> DevoteeDto.builder()
+                    .id(devotee.getId())
+                    .name(devotee.getName())
+                    .gender(devotee.getGender())
+                    .dateOfBirth(devotee.getDateOfBirth())
+                    .contactNumber(devotee.getContactNumber())
+                    .isActive(devotee.getIsActive())
+                    .namhattaId(devotee.getNamhatta() != null ? devotee.getNamhatta().getId() : null)
+                    .devotionalStatusId(devotee.getDevotionalStatus() != null ? devotee.getDevotionalStatus().getId() : null)
+                    .devotionalStatusName(devotee.getDevotionalStatus() != null ? devotee.getDevotionalStatus().getName() : null)
+                    .build())
+                .toList();
+        
         return PagedResponse.<DevoteeDto>builder()
-                .data(List.of())
+                .data(devoteeDtos)
                 .page(page)
                 .size(size)
-                .total(0)
-                .totalPages(0)
+                .total((int) devoteePage.getTotalElements())
+                .totalPages(devoteePage.getTotalPages())
                 .build();
     }
     
