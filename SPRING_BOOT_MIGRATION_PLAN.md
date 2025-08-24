@@ -465,11 +465,11 @@ session:
 **Purpose**: Configure file upload handling for namhatta update images and implement cloud storage integration
 
 **Sub-tasks:**
-- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure Spring Boot Multipart file upload settings
-- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Implement file upload controller with validation (5MB limit, image types only)
-- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up cloud storage integration (AWS S3, Google Cloud, or similar)
-- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create image upload service with security validation
-- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure static file serving for uploaded images
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Configure Spring Boot Multipart file upload settings
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Implement file upload controller with validation (5MB limit, image types only)
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Set up cloud storage integration (AWS S3, Google Cloud, or similar)
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Create image upload service with security validation
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Configure static file serving for uploaded images
 
 **Files to create:**
 ```
@@ -514,16 +514,16 @@ storage:
 ---
 
 ### Task 1.5: Security & CORS Configuration
-**Status**: ✓ Completed
+**Status**: ☐ Not Started | ☐ In Progress | ✓ Completed
 
 **Purpose**: Implement comprehensive security headers, CORS policy, and Content Security Policy
 
 **Sub-tasks:**
 - ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Configure Spring Security headers (HSTS, CSP, X-Frame-Options)
-- ☐ **Status**: ☐ Not Started | ✓ In Progress | ☐ Completed - Set up CORS policy (production vs development)
-- ☐ **Status**: ☐ Not Started | ✓ In Progress | ☐ Completed - Implement Content Security Policy directives
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Set up CORS policy (production vs development)
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Implement Content Security Policy directives
 - ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Configure X-Content-Type-Options and other security headers
-- ☐ **Status**: ☐ Not Started | ✓ In Progress | ☐ Completed - Set up request size limits and protection against malicious requests
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Set up request size limits and protection against malicious requests
 
 **Files to create:**
 ```
@@ -578,10 +578,10 @@ public class SecurityConfig {
 
 **Sub-tasks:**
 - ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Create environment-specific application.yml files
-- ☐ **Status**: ☐ Not Started | ✓ In Progress | ☐ Completed - Set up @ConfigurationProperties beans for type-safe configuration
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Set up @ConfigurationProperties beans for type-safe configuration
 - ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Configure development vs production settings
 - ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Set up logging configuration per environment
-- ☐ **Status**: ☐ Not Started | ✓ In Progress | ☐ Completed - Create configuration validation
+- ✓ **Status**: ☐ Not Started | ☐ In Progress | ✓ Completed - Create configuration validation
 
 **Files to create:**
 ```
@@ -1059,10 +1059,10 @@ public class Devotee {
 ```
 
 **Validation Criteria:**
-- [ ] All entities compile without errors
-- [ ] Can retrieve existing data from each table
-- [ ] Relationships work correctly (devotee -> namhatta, devotee -> status)
-- [ ] JSON fields (devotional_courses) map correctly
+- [✓] All entities compile without errors
+- [✓] Can retrieve existing data from each table
+- [✓] Relationships work correctly (devotee -> namhatta, devotee -> status)
+- [✓] JSON fields (devotional_courses) map correctly
 
 ---
 
@@ -1144,10 +1144,10 @@ public class DevoteeAddress {
 ```
 
 **Validation Criteria:**
-- [ ] Can retrieve devotee with all addresses
-- [ ] Can retrieve namhatta with address and landmark
-- [ ] Junction table relationships work correctly
-- [ ] Address filtering by district works for supervisors
+- [✓] Can retrieve devotee with all addresses
+- [✓] Can retrieve namhatta with address and landmark
+- [✓] Junction table relationships work correctly
+- [✓] Address filtering by district works for supervisors
 
 ---
 
@@ -1226,11 +1226,11 @@ public interface NamhattaRepository extends JpaRepository<Namhatta, Long> {
 ```
 
 **Validation Criteria:**
-- [ ] All repository methods compile and work
-- [ ] Can query existing data successfully
-- [ ] Filtering by districts works for supervisors
-- [ ] Pagination and sorting work correctly
-- [ ] Complex joins return expected results
+- [✓] All repository methods compile and work
+- [✓] Can query existing data successfully
+- [✓] Filtering by districts works for supervisors
+- [✓] Pagination and sorting work correctly
+- [✓] Complex joins return expected results
 
 ---
 
@@ -1535,11 +1535,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 ```
 
 **Validation Criteria:**
-- [ ] JWT tokens created with same format as Node.js
-- [ ] HTTP-only cookies work for authentication
-- [ ] Session validation enforces single login
-- [ ] Role-based access control works correctly
-- [ ] District-based filtering applied for supervisors
+- [✓] JWT tokens created with same format as Node.js
+- [✓] HTTP-only cookies work for authentication
+- [✓] Session validation enforces single login
+- [✓] Role-based access control works correctly
+- [✓] District-based filtering applied for supervisors
 
 ---
 
@@ -1661,12 +1661,12 @@ public class SecurityHeadersConfig {
 ```
 
 **Validation Criteria:**
-- [ ] Login rate limiting: 5 attempts per 15 minutes per IP
-- [ ] API rate limiting: 100 requests per 15 minutes per IP
-- [ ] Modification rate limiting: 10 requests per minute per IP
-- [ ] Input sanitization escapes HTML entities and trims whitespace
-- [ ] Security headers set correctly in production
-- [ ] CORS configuration matches Node.js behavior
+- [✓] Login rate limiting: 5 attempts per 15 minutes per IP
+- [✓] API rate limiting: 100 requests per 15 minutes per IP
+- [✓] Modification rate limiting: 10 requests per minute per IP
+- [✓] Input sanitization escapes HTML entities and trims whitespace
+- [✓] Security headers set correctly in production
+- [✓] CORS configuration matches Node.js behavior
 
 ---
 
@@ -1798,11 +1798,11 @@ public class AuthBypassFilter implements Filter {
 ```
 
 **Validation Criteria:**
-- [ ] Development endpoints only available in development profile
-- [ ] Authentication bypass works with safety checks (never in production)
-- [ ] Environment-specific CORS and security configurations
-- [ ] Profile-based logging configurations
-- [ ] Mock user setup matches Node.js dev behavior
+- [✓] Development endpoints only available in development profile
+- [✓] Authentication bypass works with safety checks (never in production)
+- [✓] Environment-specific CORS and security configurations
+- [✓] Profile-based logging configurations
+- [✓] Mock user setup matches Node.js dev behavior
 
 ---
 
@@ -2168,16 +2168,16 @@ public class GeographicService {
 ## Phase 5: REST Controllers & API Layer
 
 ### Task 5.1: Authentication Controller
-**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+**Status**: ☐ Not Started | ☐ In Progress | ✓ Completed
 
 **Purpose**: Convert all `/api/auth/*` endpoints from Express to Spring Boot
 
 **Sub-tasks:**
-- [ ] Create `AuthController.java` with login/logout endpoints
-- [ ] Implement HTTP-only cookie handling
-- [ ] Create user verification endpoint
-- [ ] Add development endpoints for user testing
-- [ ] Test authentication flow end-to-end
+- [✓] Create `AuthController.java` with login/logout endpoints
+- [✓] Implement HTTP-only cookie handling
+- [✓] Create user verification endpoint
+- [✓] Add development endpoints for user testing
+- [✓] Test authentication flow end-to-end
 
 `AuthController.java`:
 ```java
@@ -2327,7 +2327,7 @@ public class AuthController {
 ---
 
 ### Task 5.2: Devotee Controller
-**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+**Status**: ☐ Not Started | ✓ In Progress | ☐ Completed
 
 **Sub-tasks:**
 - [ ] Create `DevoteeController.java` with all CRUD endpoints

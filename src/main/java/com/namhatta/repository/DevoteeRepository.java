@@ -26,6 +26,38 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
     Page<Devotee> findByNameContainingIgnoreCase(@Param("name") String name, Pageable pageable);
     
     /**
+     * Search devotees by text (legal name, name, email, phone)
+     */
+    @Query("SELECT d FROM Devotee d WHERE " +
+           "LOWER(d.legalName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.phone) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Devotee> findBySearch(@Param("search") String search, Pageable pageable);
+    
+    /**
+     * Find devotees by devotional status ID
+     */
+    @Query("SELECT d FROM Devotee d WHERE d.devotionalStatus.statusName = :status")
+    Page<Devotee> findByStatus(@Param("status") String status, Pageable pageable);
+    
+    /**
+     * Find devotees by status and search
+     */
+    @Query("SELECT d FROM Devotee d WHERE d.devotionalStatus.statusName = :status AND " +
+           "(LOWER(d.legalName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.phone) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Devotee> findByStatusAndSearch(@Param("status") String status, @Param("search") String search, Pageable pageable);
+    
+    /**
+     * Find devotees by namhatta ID
+     */
+    @Query("SELECT d FROM Devotee d WHERE d.namhatta.id = :namhattaId")
+    List<Devotee> findByNamhattaId(@Param("namhattaId") Long namhattaId);
+    
+    /**
      * Find devotees by email
      */
     Optional<Devotee> findByEmail(String email);
@@ -52,15 +84,67 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
     
     /**
      * Find devotees in specific districts (for district supervisor filtering)
-     * TODO: Implement when address relationship is properly defined
      */
-    // @Query("""
-    //     SELECT d FROM Devotee d 
-    //     JOIN d.addresses da 
-    //     JOIN da.address a 
-    //     WHERE a.districtNameEnglish IN :districts
-    //     """)
-    // Page<Devotee> findByDistrictsIn(@Param("districts") List<String> districts, Pageable pageable);
+    @Query("SELECT DISTINCT d FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE a.districtNameEnglish IN :districts")
+    Page<Devotee> findByDistricts(@Param("districts") List<String> districts, Pageable pageable);
+    
+    /**
+     * Find devotees by districts and status
+     */
+    @Query("SELECT DISTINCT d FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE a.districtNameEnglish IN :districts " +
+           "AND d.devotionalStatus.statusName = :status")
+    Page<Devotee> findByDistrictsAndStatus(@Param("districts") List<String> districts, @Param("status") String status, Pageable pageable);
+    
+    /**
+     * Find devotees by districts and search
+     */
+    @Query("SELECT DISTINCT d FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE a.districtNameEnglish IN :districts " +
+           "AND (LOWER(d.legalName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.phone) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Devotee> findByDistrictsAndSearch(@Param("districts") List<String> districts, @Param("search") String search, Pageable pageable);
+    
+    /**
+     * Find devotees by districts, status and search
+     */
+    @Query("SELECT DISTINCT d FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE a.districtNameEnglish IN :districts " +
+           "AND d.devotionalStatus.statusName = :status " +
+           "AND (LOWER(d.legalName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.phone) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Devotee> findByDistrictsAndStatusAndSearch(@Param("districts") List<String> districts, @Param("status") String status, @Param("search") String search, Pageable pageable);
+    
+    /**
+     * Find devotee by ID with district filtering
+     */
+    @Query("SELECT DISTINCT d FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE d.id = :id AND a.districtNameEnglish IN :districts")
+    Optional<Devotee> findByIdAndDistricts(@Param("id") Long id, @Param("districts") List<String> districts);
+    
+    /**
+     * Find devotees by namhatta ID with district filtering
+     */
+    @Query("SELECT DISTINCT d FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE d.namhatta.id = :namhattaId AND a.districtNameEnglish IN :districts")
+    List<Devotee> findByNamhattaIdAndDistricts(@Param("namhattaId") Long namhattaId, @Param("districts") List<String> districts);
     
     /**
      * Search devotees with district filtering

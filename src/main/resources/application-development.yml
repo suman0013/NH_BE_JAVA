@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:5000}
+  port: 8080
   address: 0.0.0.0
 
 spring:
@@ -8,12 +8,17 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        id:
+          new_generator_mappings: false
   data:
     redis:
       host: localhost
@@ -31,10 +36,13 @@ app:
     headers-enabled: false
   rate-limit:
     enabled: false
+  jwt:
+    secret: ${JWT_SECRET:development-secret-key-change-in-production-min-256-bits-long-enough-for-hmac-sha256}
+    expiration: 86400000 # 24 hours
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:development-secret-key-change-in-production-min-256-bits}
+  secret: ${JWT_SECRET:development-secret-key-change-in-production-min-256-bits-long-enough-for-hmac-sha256}
   expiration: 86400000 # 24 hours
 
 # Logging Configuration

@@ -21,7 +21,7 @@ public class Leader {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "Leader unique identifier", example = "1")
-    private Long id;
+    private Integer id;
     
     @Column(nullable = false)
     @Schema(description = "Leader name", example = "His Divine Grace", required = true)
@@ -41,7 +41,7 @@ public class Leader {
     
     @Column(name = "parent_leader_id")
     @Schema(description = "ID of parent leader in hierarchy")
-    private Long parentLeaderId;
+    private Integer parentLeaderId;
     
     @Column(name = "is_active", nullable = false)
     @Builder.Default

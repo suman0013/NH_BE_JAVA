@@ -30,9 +30,7 @@ public class DevotionalStatus {
     @Schema(description = "Status name", example = "Sishya", required = true)
     private String name;
     
-    @Column
-    @Schema(description = "Status description", example = "Student level in spiritual hierarchy")
-    private String description;
+    // Note: description column removed to match existing database schema
     
     @Column(name = "hierarchy_level")
     @Schema(description = "Hierarchical level (higher number = higher status)", example = "1")
