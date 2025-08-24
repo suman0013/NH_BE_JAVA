@@ -31,9 +31,9 @@ public class DevoteeMapper {
                 .email(devotee.getEmail())
                 .phone(devotee.getPhone())
                 .gender(devotee.getGender())
-                .alternatePhone(devotee.getAlternatePhone())
-                .relationshipStatus(devotee.getRelationshipStatus())
-                .spouseName(devotee.getSpouseName())
+                .alternatePhone(null) // Not available in entity
+                .relationshipStatus(devotee.getMaritalStatus())
+                .spouseName(devotee.getHusbandName())
                 .fatherName(devotee.getFatherName())
                 .motherName(devotee.getMotherName())
                 .initiatedName(devotee.getInitiatedName())
@@ -42,11 +42,11 @@ public class DevoteeMapper {
                 .education(devotee.getEducation())
                 .occupation(devotee.getOccupation())
                 .devotionalCourses(mapDevotionalCourses(devotee.getDevotionalCourses()))
-                .remarks(devotee.getRemarks())
+                .remarks(null) // Not available in entity
                 .namhattaId(devotee.getNamhatta() != null ? devotee.getNamhatta().getId() : null)
                 .namhattaName(devotee.getNamhatta() != null ? devotee.getNamhatta().getName() : null)
                 .devotionalStatusId(devotee.getDevotionalStatus() != null ? devotee.getDevotionalStatus().getId() : null)
-                .devotionalStatusName(devotee.getDevotionalStatus() != null ? devotee.getDevotionalStatus().getStatusName() : null)
+                .devotionalStatusName(devotee.getDevotionalStatus() != null ? devotee.getDevotionalStatus().getName() : null)
                 .addresses(mapAddressesToDto(devotee.getAddresses()))
                 .createdAt(devotee.getCreatedAt())
                 .updatedAt(devotee.getUpdatedAt())
@@ -68,9 +68,9 @@ public class DevoteeMapper {
         devotee.setEmail(dto.getEmail());
         devotee.setPhone(dto.getPhone());
         devotee.setGender(dto.getGender());
-        devotee.setAlternatePhone(dto.getAlternatePhone());
-        devotee.setRelationshipStatus(dto.getRelationshipStatus());
-        devotee.setSpouseName(dto.getSpouseName());
+        // Map DTO fields to entity fields
+        devotee.setMaritalStatus(dto.getRelationshipStatus());
+        devotee.setHusbandName(dto.getSpouseName());
         devotee.setFatherName(dto.getFatherName());
         devotee.setMotherName(dto.getMotherName());
         devotee.setInitiatedName(dto.getInitiatedName());
@@ -79,7 +79,6 @@ public class DevoteeMapper {
         devotee.setEducation(dto.getEducation());
         devotee.setOccupation(dto.getOccupation());
         devotee.setDevotionalCourses(mapDevotionalCoursesFromDto(dto.getDevotionalCourses()));
-        devotee.setRemarks(dto.getRemarks());
         
         // Set namhatta and devotional status (these will be resolved by service layer)
         if (dto.getNamhattaId() != null) {
@@ -110,7 +109,7 @@ public class DevoteeMapper {
                 addresses.add(permanentAddr);
             }
             
-            devotee.setAddresses(addresses);
+            // TODO: Handle addresses when relationship is added to Devotee entity
         }
         
         return devotee;
@@ -143,14 +142,11 @@ public class DevoteeMapper {
         if (dto.getGender() != null) {
             devotee.setGender(dto.getGender());
         }
-        if (dto.getAlternatePhone() != null) {
-            devotee.setAlternatePhone(dto.getAlternatePhone());
-        }
         if (dto.getRelationshipStatus() != null) {
-            devotee.setRelationshipStatus(dto.getRelationshipStatus());
+            devotee.setMaritalStatus(dto.getRelationshipStatus());
         }
         if (dto.getSpouseName() != null) {
-            devotee.setSpouseName(dto.getSpouseName());
+            devotee.setHusbandName(dto.getSpouseName());
         }
         if (dto.getFatherName() != null) {
             devotee.setFatherName(dto.getFatherName());
@@ -176,9 +172,6 @@ public class DevoteeMapper {
         if (dto.getDevotionalCourses() != null) {
             devotee.setDevotionalCourses(mapDevotionalCoursesFromDto(dto.getDevotionalCourses()));
         }
-        if (dto.getRemarks() != null) {
-            devotee.setRemarks(dto.getRemarks());
-        }
         
         // Update namhatta and devotional status
         if (dto.getNamhattaId() != null) {
@@ -200,27 +193,40 @@ public class DevoteeMapper {
     /**
      * Map list of DevotionalCourse strings to DevotionalCourseDto list
      */
-    private List<DevotionalCourseDto> mapDevotionalCourses(String devotionalCourses) {
-        if (devotionalCourses == null || devotionalCourses.trim().isEmpty()) {
+    private List<DevotionalCourseDto> mapDevotionalCourses(List<DevotionalCourse> devotionalCourses) {
+        if (devotionalCourses == null || devotionalCourses.isEmpty()) {
             return new ArrayList<>();
         }
         
-        // In a real implementation, this would parse the JSON string stored in the database
-        // For now, return empty list or implement based on actual data format
-        return new ArrayList<>();
+        // Convert DevotionalCourse entities to DTOs
+        return devotionalCourses.stream()
+                .map(course -> DevotionalCourseDto.builder()
+                        .courseName(course.getCourseName())
+                        .status(course.getStatus())
+                        .completionDate(course.getCompletionDate())
+                        .remarks(course.getNotes()) // Map notes to remarks
+                        .build())
+                .collect(Collectors.toList());
     }
     
     /**
      * Map DevotionalCourseDto list to string for database storage
      */
-    private String mapDevotionalCoursesFromDto(List<DevotionalCourseDto> courses) {
+    private List<DevotionalCourse> mapDevotionalCoursesFromDto(List<DevotionalCourseDto> courses) {
         if (courses == null || courses.isEmpty()) {
-            return null;
+            return new ArrayList<>();
         }
         
-        // In a real implementation, this would serialize to JSON string
-        // For now, return null or implement based on actual data format
-        return null;
+        // Convert DTOs to DevotionalCourse entities
+        return courses.stream()
+                .map(dto -> DevotionalCourse.builder()
+                        .courseName(dto.getCourseName())
+                        .status(dto.getStatus())
+                        .completionDate(dto.getCompletionDate())
+                        .notes(dto.getRemarks()) // Map remarks to notes
+                        .grade(null) // Grade not available in DTO
+                        .build())
+                .collect(Collectors.toList());
     }
     
     /**

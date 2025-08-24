@@ -124,6 +124,12 @@ public class Devotee {
     @Schema(description = "Associated shraddhakutir")
     private Shraddhakutir shraddhakutir;
     
+    // Address relationships
+    @OneToMany(mappedBy = "devotee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    @Schema(description = "Associated addresses")
+    private List<DevoteeAddress> addresses = new ArrayList<>();
+    
     @PrePersist
     protected void onCreate() {
         log.debug("Creating new devotee entity: {}", legalName);
