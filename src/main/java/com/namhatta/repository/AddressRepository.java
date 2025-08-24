@@ -92,4 +92,48 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
                                           @Param("district") String district,
                                           @Param("village") String village,
                                           Pageable pageable);
+    
+    /**
+     * Get distinct districts by country and state
+     */
+    @Query("SELECT DISTINCT a.districtNameEnglish FROM Address a WHERE a.country = :country AND a.stateNameEnglish = :state AND a.districtNameEnglish IS NOT NULL ORDER BY a.districtNameEnglish")
+    List<String> findDistinctDistrictsByCountryAndState(@Param("country") String country, @Param("state") String state);
+    
+    /**
+     * Get distinct subdistricts by country, state and district
+     */
+    @Query("SELECT DISTINCT a.subdistrictNameEnglish FROM Address a WHERE a.country = :country AND a.stateNameEnglish = :state AND a.districtNameEnglish = :district AND a.subdistrictNameEnglish IS NOT NULL ORDER BY a.subdistrictNameEnglish")
+    List<String> findDistinctSubdistrictsByCountryStateAndDistrict(@Param("country") String country, @Param("state") String state, @Param("district") String district);
+    
+    /**
+     * Get distinct villages by country, state, district and subdistrict
+     */
+    @Query("SELECT DISTINCT a.villageNameEnglish FROM Address a WHERE a.country = :country AND a.stateNameEnglish = :state AND a.districtNameEnglish = :district AND a.subdistrictNameEnglish = :subdistrict AND a.villageNameEnglish IS NOT NULL ORDER BY a.villageNameEnglish")
+    List<String> findDistinctVillagesByCountryStateDistrictAndSubdistrict(@Param("country") String country, @Param("state") String state, @Param("district") String district, @Param("subdistrict") String subdistrict);
+    
+    /**
+     * Get distinct pincodes by country
+     */
+    @Query("SELECT DISTINCT a.pincode FROM Address a WHERE a.country = :country AND a.pincode IS NOT NULL ORDER BY a.pincode")
+    List<String> findDistinctPincodesByCountry(@Param("country") String country);
+    
+    /**
+     * Get distinct pincodes by country with search
+     */
+    @Query("SELECT DISTINCT a.pincode FROM Address a WHERE a.country = :country AND a.pincode LIKE CONCAT(:search, '%') AND a.pincode IS NOT NULL ORDER BY a.pincode")
+    List<String> findDistinctPincodesByCountryAndSearch(@Param("country") String country, @Param("search") String search);
+    
+    /**
+     * Find distinct pincodes containing search term
+     */
+    @Query("SELECT DISTINCT a.pincode FROM Address a WHERE a.pincode LIKE CONCAT('%', :query, '%') AND a.pincode IS NOT NULL ORDER BY a.pincode")
+    List<String> findDistinctPincodesContaining(@Param("query") String query);
+    
+    /**
+     * Find address information by pincode
+     */
+    @Query("""
+        SELECT a FROM Address a WHERE a.pincode = :pincode
+        """)
+    Optional<Address> findFirstByPincode(@Param("pincode") String pincode);
 }

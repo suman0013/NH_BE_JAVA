@@ -250,10 +250,26 @@ public class NamhattaService {
     }
     
     private boolean hasDistrictAccess(Namhatta namhatta, List<String> allowedDistricts) {
-        // This would check if the namhatta is in any of the allowed districts
-        // Implementation depends on address relationship
-        // For now, return true - will be implemented when address relationship is available
-        return true;
+        // Check if the namhatta is in any of the allowed districts
+        try {
+            // Get namhatta addresses and check districts
+            List<NamhattaAddress> namhattaAddresses = namhatta.getAddresses();
+            if (namhattaAddresses.isEmpty()) {
+                return false; // No address means no district access
+            }
+            
+            for (NamhattaAddress namhattaAddress : namhattaAddresses) {
+                String district = namhattaAddress.getAddress().getDistrictNameEnglish();
+                if (district != null && allowedDistricts.contains(district)) {
+                    return true; // Found matching district
+                }
+            }
+            
+            return false; // No matching districts found
+        } catch (Exception e) {
+            log.warn("Error checking district access for namhatta {}: {}", namhatta.getId(), e.getMessage());
+            return false; // Deny access on error
+        }
     }
     
     private void saveNamhattaAddress(Namhatta namhatta, CreateAddressDto addressDto) {
