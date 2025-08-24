@@ -173,7 +173,7 @@ All APIs must use consistent error response format:
 ## Phase 1: Project Setup & Infrastructure
 
 ### Task 1.1: Create Replit Spring Boot Project
-**Status**: ☐ Not Started | ✓ In Progress | ☐ Completed
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
 
 **Sub-tasks:**
 - ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create new Replit Java project named "namhatta-springboot"
