@@ -122,4 +122,32 @@ public interface NamhattaRepository extends JpaRepository<Namhatta, Long> {
         GROUP BY a.stateNameEnglish
         """)
     List<Object[]> getNamhattaCountByState();
+    
+    /**
+     * Count namhattas by approval status
+     */
+    long countByIsApproved(Boolean isApproved);
+    
+    /**
+     * Count namhattas in districts
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT n) FROM Namhatta n 
+        JOIN NamhattaAddress na ON na.namhatta = n
+        JOIN na.address a 
+        WHERE a.districtNameEnglish IN :districts
+        """)
+    long countByDistricts(@Param("districts") List<String> districts);
+    
+    /**
+     * Count namhattas by approval status and districts
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT n) FROM Namhatta n 
+        JOIN NamhattaAddress na ON na.namhatta = n
+        JOIN na.address a 
+        WHERE n.isApproved = :isApproved
+        AND a.districtNameEnglish IN :districts
+        """)
+    long countByIsApprovedAndDistricts(@Param("isApproved") Boolean isApproved, @Param("districts") List<String> districts);
 }

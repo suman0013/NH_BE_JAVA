@@ -1,7 +1,9 @@
 package com.namhatta.controller;
 
+import com.namhatta.service.MapDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,28 +17,21 @@ import java.util.*;
 @CrossOrigin(allowCredentials = "true")
 public class MapDataController {
     
+    private final MapDataService mapDataService;
+    
     @GetMapping("/countries")
     public ResponseEntity<List<Map<String, Object>>> getCountriesWithNamhattaCount(HttpServletRequest request) {
         log.debug("Getting countries with namhatta count");
         
-        // Get user constraints for district filtering
-        String userRole = (String) request.getAttribute("userRole");
-        List<String> allowedDistricts = (List<String>) request.getAttribute("userDistricts");
-        
-        // Apply district filtering for supervisors
-        if ("DISTRICT_SUPERVISOR".equals(userRole) && allowedDistricts != null) {
-            log.debug("Filtering map data for supervisor districts: {}", allowedDistricts);
+        try {
+            List<String> allowedDistricts = getAllowedDistricts(request);
+            List<Map<String, Object>> countries = mapDataService.getCountriesWithNamhattaCount(allowedDistricts);
+            return ResponseEntity.ok(countries);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving countries with namhatta count", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        // Return sample country data with namhatta counts
-        List<Map<String, Object>> countries = new ArrayList<>();
-        
-        Map<String, Object> india = new HashMap<>();
-        india.put("country", "India");
-        india.put("namhattaCount", 85);
-        countries.add(india);
-        
-        return ResponseEntity.ok(countries);
     }
     
     @GetMapping("/states")
@@ -45,29 +40,15 @@ public class MapDataController {
             HttpServletRequest request) {
         log.debug("Getting states with namhatta count for country: {}", country);
         
-        List<String> allowedDistricts = getAllowedDistricts(request);
-        
-        // Return sample state data with namhatta counts
-        List<Map<String, Object>> states = new ArrayList<>();
-        
-        if ("India".equals(country)) {
-            Map<String, Object> wb = new HashMap<>();
-            wb.put("state", "West Bengal");
-            wb.put("namhattaCount", 45);
-            states.add(wb);
+        try {
+            List<String> allowedDistricts = getAllowedDistricts(request);
+            List<Map<String, Object>> states = mapDataService.getStatesWithNamhattaCount(country, allowedDistricts);
+            return ResponseEntity.ok(states);
             
-            Map<String, Object> odisha = new HashMap<>();
-            odisha.put("state", "Odisha");
-            odisha.put("namhattaCount", 25);
-            states.add(odisha);
-            
-            Map<String, Object> assam = new HashMap<>();
-            assam.put("state", "Assam");
-            assam.put("namhattaCount", 15);
-            states.add(assam);
+        } catch (Exception e) {
+            log.error("Error retrieving states with namhatta count for country: {}", country, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        return ResponseEntity.ok(states);
     }
     
     @GetMapping("/districts")
@@ -77,29 +58,15 @@ public class MapDataController {
             HttpServletRequest request) {
         log.debug("Getting districts with namhatta count for state: {}", state);
         
-        List<String> allowedDistricts = getAllowedDistricts(request);
-        
-        // Return sample district data with namhatta counts
-        List<Map<String, Object>> districts = new ArrayList<>();
-        
-        if ("West Bengal".equals(state)) {
-            Map<String, Object> kolkata = new HashMap<>();
-            kolkata.put("district", "Kolkata");
-            kolkata.put("namhattaCount", 12);
-            districts.add(kolkata);
+        try {
+            List<String> allowedDistricts = getAllowedDistricts(request);
+            List<Map<String, Object>> districts = mapDataService.getDistrictsWithNamhattaCount(country, state, allowedDistricts);
+            return ResponseEntity.ok(districts);
             
-            Map<String, Object> hooghly = new HashMap<>();
-            hooghly.put("district", "Hooghly");
-            hooghly.put("namhattaCount", 18);
-            districts.add(hooghly);
-            
-            Map<String, Object> howrah = new HashMap<>();
-            howrah.put("district", "Howrah");
-            howrah.put("namhattaCount", 15);
-            districts.add(howrah);
+        } catch (Exception e) {
+            log.error("Error retrieving districts with namhatta count for state: {}", state, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        return ResponseEntity.ok(districts);
     }
     
     @GetMapping("/subdistricts")
@@ -110,21 +77,15 @@ public class MapDataController {
             HttpServletRequest request) {
         log.debug("Getting sub-districts with namhatta count for district: {}", district);
         
-        List<String> allowedDistricts = getAllowedDistricts(request);
-        
-        // Return sample sub-district data with namhatta counts
-        List<Map<String, Object>> subdistricts = new ArrayList<>();
-        
-        if ("Kolkata".equals(district)) {
-            for (int i = 1; i <= 4; i++) {
-                Map<String, Object> subdistrict = new HashMap<>();
-                subdistrict.put("subdistrict", "Block " + i);
-                subdistrict.put("namhattaCount", 3);
-                subdistricts.add(subdistrict);
-            }
+        try {
+            List<String> allowedDistricts = getAllowedDistricts(request);
+            List<Map<String, Object>> subdistricts = mapDataService.getSubDistrictsWithNamhattaCount(country, state, district, allowedDistricts);
+            return ResponseEntity.ok(subdistricts);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving sub-districts for district: {}", district, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        return ResponseEntity.ok(subdistricts);
     }
     
     @GetMapping("/namhattas")
@@ -136,21 +97,15 @@ public class MapDataController {
             HttpServletRequest request) {
         log.debug("Getting namhattas for sub-district: {}", subdistrict);
         
-        List<String> allowedDistricts = getAllowedDistricts(request);
-        
-        // Return sample namhatta data
-        List<Map<String, Object>> namhattas = new ArrayList<>();
-        
-        for (int i = 1; i <= 3; i++) {
-            Map<String, Object> namhatta = new HashMap<>();
-            namhatta.put("id", i);
-            namhatta.put("name", "Namhatta " + i);
-            namhatta.put("code", "NH" + String.format("%03d", i));
-            namhatta.put("devoteeCount", 15 + i * 5);
-            namhattas.add(namhatta);
+        try {
+            List<String> allowedDistricts = getAllowedDistricts(request);
+            List<Map<String, Object>> namhattas = mapDataService.getNamhattasBySubDistrict(country, state, district, subdistrict, allowedDistricts);
+            return ResponseEntity.ok(namhattas);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving namhattas for sub-district: {}", subdistrict, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
-        
-        return ResponseEntity.ok(namhattas);
     }
     
     private List<String> getAllowedDistricts(HttpServletRequest request) {

@@ -173,6 +173,25 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
     long countByNamhatta(Namhatta namhatta);
     
     /**
+     * Count devotees by devotional status and districts
+     */
+    @Query("SELECT COUNT(DISTINCT d) FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE d.devotionalStatus = :status " +
+           "AND a.districtNameEnglish IN :districts")
+    long countByDevotionalStatusAndDistricts(@Param("status") DevotionalStatus status, @Param("districts") List<String> districts);
+    
+    /**
+     * Count devotees by districts
+     */
+    @Query("SELECT COUNT(DISTINCT d) FROM Devotee d " +
+           "JOIN d.addresses da " +
+           "JOIN da.address a " +
+           "WHERE a.districtNameEnglish IN :districts")
+    long countByDistricts(@Param("districts") List<String> districts);
+    
+    /**
      * Count devotees in districts
      * TODO: Implement when address relationship is properly defined
      */

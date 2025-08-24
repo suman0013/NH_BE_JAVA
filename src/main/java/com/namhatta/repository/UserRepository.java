@@ -55,4 +55,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Count users by role
      */
     long countByRoleAndIsActive(UserRole role, Boolean isActive);
+    
+    /**
+     * Find users by username containing search term (case insensitive)
+     */
+    @Query("SELECT u FROM User u WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) ORDER BY u.createdAt DESC")
+    org.springframework.data.domain.Page<User> findByUsernameContainingIgnoreCase(@Param("search") String search, org.springframework.data.domain.Pageable pageable);
 }

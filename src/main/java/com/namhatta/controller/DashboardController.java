@@ -1,5 +1,6 @@
 package com.namhatta.controller;
 
+import com.namhatta.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -15,64 +16,69 @@ import java.util.*;
 @CrossOrigin(allowCredentials = "true")
 public class DashboardController {
     
+    private final DashboardService dashboardService;
+    
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboardStats(HttpServletRequest request) {
         log.debug("Getting dashboard statistics");
         
-        // Get user role and districts from JWT token attributes
-        String userRole = (String) request.getAttribute("userRole");
-        List<String> allowedDistricts = (List<String>) request.getAttribute("userDistricts");
-        
-        // Apply district filtering for supervisors
-        if ("DISTRICT_SUPERVISOR".equals(userRole) && allowedDistricts != null) {
-            log.debug("Filtering dashboard stats for supervisor districts: {}", allowedDistricts);
+        try {
+            // Get user role and districts from JWT token attributes
+            String userRole = (String) request.getAttribute("userRole");
+            List<String> allowedDistricts = (List<String>) request.getAttribute("userDistricts");
+            
+            // Apply district filtering for supervisors
+            if ("DISTRICT_SUPERVISOR".equals(userRole) && allowedDistricts != null) {
+                log.debug("Filtering dashboard stats for supervisor districts: {}", allowedDistricts);
+            }
+            
+            // Get real dashboard statistics from service
+            Map<String, Object> stats = dashboardService.getDashboardStats(allowedDistricts);
+            
+            log.debug("Dashboard statistics retrieved successfully");
+            return ResponseEntity.ok(stats);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving dashboard statistics", e);
+            
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to retrieve dashboard statistics");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
         }
-        
-        // Return sample dashboard statistics - same format as Node.js
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalDevotees", 1250);
-        stats.put("totalNamhattas", 85);
-        stats.put("totalShraddhakutirs", 12);
-        stats.put("approvalsPending", 8);
-        
-        Map<String, Integer> statusDistribution = new HashMap<>();
-        statusDistribution.put("Regular Devotee", 800);
-        statusDistribution.put("Aspiring Devotee", 300);
-        statusDistribution.put("Initiated Devotee", 150);
-        stats.put("statusDistribution", statusDistribution);
-        
-        return ResponseEntity.ok(stats);
     }
     
     @GetMapping("/status-distribution")
     public ResponseEntity<List<Map<String, Object>>> getStatusDistribution(HttpServletRequest request) {
         log.debug("Getting status distribution");
         
-        // Get user constraints
-        String userRole = (String) request.getAttribute("userRole");
-        List<String> allowedDistricts = (List<String>) request.getAttribute("userDistricts");
-        
-        // Return status distribution data - same format as Node.js
-        List<Map<String, Object>> distribution = new ArrayList<>();
-        
-        Map<String, Object> regular = new HashMap<>();
-        regular.put("status", "Regular Devotee");
-        regular.put("count", 800);
-        regular.put("percentage", 64.0);
-        distribution.add(regular);
-        
-        Map<String, Object> aspiring = new HashMap<>();
-        aspiring.put("status", "Aspiring Devotee");
-        aspiring.put("count", 300);
-        aspiring.put("percentage", 24.0);
-        distribution.add(aspiring);
-        
-        Map<String, Object> initiated = new HashMap<>();
-        initiated.put("status", "Initiated Devotee");
-        initiated.put("count", 150);
-        initiated.put("percentage", 12.0);
-        distribution.add(initiated);
-        
-        return ResponseEntity.ok(distribution);
+        try {
+            // Get user constraints
+            String userRole = (String) request.getAttribute("userRole");
+            List<String> allowedDistricts = (List<String>) request.getAttribute("userDistricts");
+            
+            // Apply district filtering for supervisors
+            if ("DISTRICT_SUPERVISOR".equals(userRole) && allowedDistricts != null) {
+                log.debug("Filtering status distribution for supervisor districts: {}", allowedDistricts);
+            }
+            
+            // Get real status distribution data from service
+            List<Map<String, Object>> distribution = dashboardService.getStatusDistributionList(allowedDistricts);
+            
+            log.debug("Status distribution retrieved successfully");
+            return ResponseEntity.ok(distribution);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving status distribution", e);
+            
+            // Return error response
+            List<Map<String, Object>> errorResponse = new ArrayList<>();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to retrieve status distribution");
+            error.put("message", e.getMessage());
+            errorResponse.add(error);
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
 }

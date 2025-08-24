@@ -82,4 +82,10 @@ public interface ShraddhakutirRepository extends JpaRepository<Shraddhakutir, Lo
         ORDER BY s.name
         """)
     List<Object[]> getShraddhakutirStatistics();
+    
+    /**
+     * Count shraddhakutirs by districts
+     */
+    @Query("SELECT COUNT(s) FROM Shraddhakutir s WHERE s.district IN :districts AND s.isActive = true")
+    long countByDistricts(@Param("districts") List<String> districts);
 }

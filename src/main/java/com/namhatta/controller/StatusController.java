@@ -1,5 +1,6 @@
 package com.namhatta.controller;
 
+import com.namhatta.service.StatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -8,7 +9,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -18,32 +18,20 @@ import java.util.*;
 @CrossOrigin(allowCredentials = "true")
 public class StatusController {
     
+    private final StatusService statusService;
+    
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getDevotionalStatuses() {
         log.debug("Getting devotional statuses");
         
-        // Return sample devotional statuses - same format as Node.js
-        List<Map<String, Object>> statuses = new ArrayList<>();
-        
-        Map<String, Object> regular = new HashMap<>();
-        regular.put("id", 1);
-        regular.put("name", "Regular Devotee");
-        regular.put("createdAt", LocalDateTime.now().toString());
-        statuses.add(regular);
-        
-        Map<String, Object> aspiring = new HashMap<>();
-        aspiring.put("id", 2);
-        aspiring.put("name", "Aspiring Devotee");
-        aspiring.put("createdAt", LocalDateTime.now().toString());
-        statuses.add(aspiring);
-        
-        Map<String, Object> initiated = new HashMap<>();
-        initiated.put("id", 3);
-        initiated.put("name", "Initiated Devotee");
-        initiated.put("createdAt", LocalDateTime.now().toString());
-        statuses.add(initiated);
-        
-        return ResponseEntity.ok(statuses);
+        try {
+            List<Map<String, Object>> statuses = statusService.getDevotionalStatuses();
+            return ResponseEntity.ok(statuses);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving devotional statuses", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
     }
     
     @PostMapping
@@ -51,20 +39,23 @@ public class StatusController {
     public ResponseEntity<Map<String, Object>> createDevotionalStatus(@Valid @RequestBody Map<String, String> request) {
         log.debug("Creating devotional status: {}", request.get("name"));
         
-        String name = request.get("name");
-        if (name == null || name.trim().isEmpty()) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Status name is required");
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", error));
+        try {
+            String name = request.get("name");
+            Map<String, Object> createdStatus = statusService.createDevotionalStatus(name);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdStatus);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status data: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("Error creating devotional status", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to create devotional status");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
-        
-        // Return created status - same format as Node.js
-        Map<String, Object> createdStatus = new HashMap<>();
-        createdStatus.put("id", 4);
-        createdStatus.put("name", name);
-        createdStatus.put("createdAt", LocalDateTime.now().toString());
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdStatus);
     }
     
     @PutMapping("/{id}")
@@ -74,21 +65,23 @@ public class StatusController {
             @Valid @RequestBody Map<String, String> request) {
         log.debug("Updating devotional status: {}", id);
         
-        String name = request.get("name");
-        if (name == null || name.trim().isEmpty()) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Status name is required");
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", error));
+        try {
+            String name = request.get("name");
+            Map<String, Object> updatedStatus = statusService.updateDevotionalStatus(id, name);
+            return ResponseEntity.ok(updatedStatus);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status update data: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("Error updating devotional status: {}", id, e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to update devotional status");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
-        
-        // Return updated status - same format as Node.js
-        Map<String, Object> updatedStatus = new HashMap<>();
-        updatedStatus.put("id", id);
-        updatedStatus.put("name", name);
-        updatedStatus.put("createdAt", LocalDateTime.now().minusDays(1).toString());
-        updatedStatus.put("updatedAt", LocalDateTime.now().toString());
-        
-        return ResponseEntity.ok(updatedStatus);
     }
     
     @DeleteMapping("/{id}")
@@ -96,9 +89,23 @@ public class StatusController {
     public ResponseEntity<Map<String, String>> deleteDevotionalStatus(@PathVariable Long id) {
         log.debug("Deleting devotional status: {}", id);
         
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Devotional status deleted successfully");
-        
-        return ResponseEntity.ok(response);
+        try {
+            statusService.deleteDevotionalStatus(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Devotional status deleted successfully");
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Cannot delete status: {}", e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("Error deleting devotional status: {}", id, e);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to delete devotional status");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }
