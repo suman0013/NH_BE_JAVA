@@ -19,8 +19,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import com.namhatta.dto.ApiResponse;
+import com.namhatta.dto.ErrorResponse;
+import com.namhatta.dto.DevUserDto;
+import com.namhatta.dto.DevUsersResponseDto;
+import com.namhatta.dto.HealthCheckDto;
+
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -93,7 +99,7 @@ public class AuthController {
      * Clears HTTP-only cookie and invalidates session
      */
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(
+    public ResponseEntity<ApiResponse<String>> logout(
             HttpServletRequest request,
             HttpServletResponse response) {
         
@@ -122,11 +128,8 @@ public class AuthController {
             cookie.setMaxAge(0); // Delete cookie
             response.addCookie(cookie);
             
-            Map<String, String> result = new HashMap<>();
-            result.put("message", "Logged out successfully");
-            
             log.info("Logout completed successfully");
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
             
         } catch (Exception e) {
             log.error("Error during logout process", e);
@@ -138,9 +141,8 @@ public class AuthController {
             cookie.setMaxAge(0);
             response.addCookie(cookie);
             
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Logout failed");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Logout failed"));
         }
     }
     
@@ -149,7 +151,7 @@ public class AuthController {
      * Validates JWT token and session, returns user info
      */
     @GetMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyToken(HttpServletRequest request) {
+    public ResponseEntity<?> verifyToken(HttpServletRequest request) {
         
         log.debug("Token verification request received");
         
@@ -158,9 +160,8 @@ public class AuthController {
             
             if (token == null || !jwtTokenProvider.validateToken(token)) {
                 log.debug("Invalid or missing token");
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "Session expired");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ErrorResponse.builder().error("Session expired").build());
             }
             
             Claims claims = jwtTokenProvider.getClaimsFromToken(token);
@@ -172,29 +173,24 @@ public class AuthController {
             // Validate session (enforces single login like Node.js)
             if (!sessionService.isSessionValid(username, sessionToken)) {
                 log.debug("Session invalid for user: {}", username);
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "Session expired");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ErrorResponse.builder().error("Session expired").build());
             }
             
             // Return user info (same format as Node.js)
-            Map<String, Object> result = new HashMap<>();
-            Map<String, Object> user = new HashMap<>();
-            user.put("id", claims.get("userId", Long.class));
-            user.put("username", username);
-            user.put("role", claims.get("role", String.class));
-            user.put("districts", claims.get("districts", List.class));
-            
-            result.put("user", user);
+            UserDto user = UserDto.builder()
+                    .id(claims.get("userId", Long.class))
+                    .username(username)
+                    .role(claims.get("role", String.class))
+                    .build();
             
             log.debug("Token verification successful for user: {}", username);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ApiResponse.success("User verified", user));
             
         } catch (Exception e) {
             log.error("Error during token verification", e);
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Session expired");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ErrorResponse.builder().error("Session expired").build());
         }
     }
     
@@ -203,7 +199,7 @@ public class AuthController {
      * Only available in development environment
      */
     @GetMapping("/dev/users")
-    public ResponseEntity<Map<String, Object>> getDevUsers() {
+    public ResponseEntity<?> getDevUsers() {
         String currentEnvironment = environment.getProperty("spring.profiles.active", "development");
         
         if (!"development".equals(currentEnvironment)) {
@@ -215,34 +211,36 @@ public class AuthController {
         
         try {
             // Create response with available test users (same as Node.js)
-            Map<String, Object> users = new HashMap<>();
-            users.put("available_users", List.of(
-                Map.of(
-                    "username", "admin",
-                    "role", "ADMIN",
-                    "description", "System administrator with full access"
-                ),
-                Map.of(
-                    "username", "office1", 
-                    "role", "OFFICE",
-                    "description", "Office user with create/edit permissions"
-                ),
-                Map.of(
-                    "username", "supervisor1",
-                    "role", "DISTRICT_SUPERVISOR", 
-                    "description", "District supervisor with district-specific access"
-                )
-            ));
-            users.put("note", "Use password 'password123' for all test users");
-            users.put("environment", currentEnvironment);
+            List<DevUserDto> availableUsers = List.of(
+                DevUserDto.builder()
+                    .username("admin")
+                    .role("ADMIN")
+                    .description("System administrator with full access")
+                    .build(),
+                DevUserDto.builder()
+                    .username("office1")
+                    .role("OFFICE")
+                    .description("Office user with create/edit permissions")
+                    .build(),
+                DevUserDto.builder()
+                    .username("supervisor1")
+                    .role("DISTRICT_SUPERVISOR")
+                    .description("District supervisor with district-specific access")
+                    .build()
+            );
             
-            return ResponseEntity.ok(users);
+            DevUsersResponseDto response = DevUsersResponseDto.builder()
+                .availableUsers(availableUsers)
+                .note("Use password 'password123' for all test users")
+                .environment(currentEnvironment)
+                .build();
+            
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             log.error("Error retrieving development users", e);
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to retrieve users");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ErrorResponse.builder().error("Failed to retrieve users").build());
         }
     }
     
@@ -250,14 +248,16 @@ public class AuthController {
      * Health check endpoint for authentication service
      */
     @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> healthCheck() {
+    public ResponseEntity<HealthCheckDto> healthCheck() {
         log.debug("Authentication service health check");
         
-        Map<String, Object> health = new HashMap<>();
-        health.put("status", "OK");
-        health.put("service", "authentication");
-        health.put("environment", environment.getProperty("spring.profiles.active", "development"));
-        health.put("timestamp", System.currentTimeMillis());
+        HealthCheckDto health = HealthCheckDto.builder()
+                .status("OK")
+                .version("1.0.0")
+                .uptime("authentication service")
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .checks(Map.of("environment", environment.getProperty("spring.profiles.active", "development")))
+                .build();
         
         return ResponseEntity.ok(health);
     }

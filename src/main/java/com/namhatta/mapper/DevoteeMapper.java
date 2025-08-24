@@ -109,7 +109,8 @@ public class DevoteeMapper {
                 addresses.add(permanentAddr);
             }
             
-            // TODO: Handle addresses when relationship is added to Devotee entity
+            // Set addresses to entity - relationship is properly defined
+            devotee.setAddresses(addresses);
         }
         
         return devotee;

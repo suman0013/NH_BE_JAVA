@@ -320,9 +320,11 @@ public class NamhattaController {
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsServiceImpl.UserPrincipal userPrincipal) {
             // For district supervisors, return their assigned districts
             if ("DISTRICT_SUPERVISOR".equals(userPrincipal.getRole().name())) {
-                // TODO: Implement district relationship for users
-                // For now, return null to indicate no district filtering
-                return null;
+                List<String> districts = userPrincipal.getDistricts();
+                if (districts != null && !districts.isEmpty()) {
+                    return districts;
+                }
+                return null; // No districts assigned
             }
         }
         

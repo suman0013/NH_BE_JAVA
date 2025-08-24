@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.namhatta.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
+    private final SessionService sessionService;
     
     @Override
     protected void doFilterInternal(HttpServletRequest request, 
@@ -35,25 +37,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             if (token != null && tokenProvider.validateToken(token)) {
                 String username = tokenProvider.getUsernameFromToken(token);
+                String sessionToken = tokenProvider.getSessionTokenFromToken(token);
                 
-                // TODO: Add session validation once SessionService is implemented
-                // For now, just validate the token
+                // Validate session (enforces single login like Node.js)
+                if (sessionToken != null && sessionService.isSessionValid(username, sessionToken)) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                
-                if (userDetails != null) {
-                    UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    
-                    // Add user info to request for controllers
-                    request.setAttribute("currentUser", userDetails);
-                    request.setAttribute("userId", tokenProvider.getUserIdFromToken(token));
-                    request.setAttribute("userRole", tokenProvider.getRoleFromToken(token));
-                    
-                    log.trace("Successfully authenticated user: {} with role: {}", 
-                             username, tokenProvider.getRoleFromToken(token));
+                    if (userDetails != null) {
+                        UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        
+                        // Add user info to request for controllers
+                        request.setAttribute("currentUser", userDetails);
+                        request.setAttribute("userId", tokenProvider.getUserIdFromToken(token));
+                        request.setAttribute("userRole", tokenProvider.getRoleFromToken(token));
+                        
+                        log.trace("Successfully authenticated user: {} with role: {}", 
+                                 username, tokenProvider.getRoleFromToken(token));
+                    }
+                } else {
+                    log.debug("Invalid session for user: {}", username);
+                    SecurityContextHolder.clearContext();
                 }
             }
         } catch (Exception e) {

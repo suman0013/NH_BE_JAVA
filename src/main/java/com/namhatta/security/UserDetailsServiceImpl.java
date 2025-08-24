@@ -59,6 +59,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             return user.getRole();
         }
         
+        public List<String> getDistricts() {
+            return user.getDistricts();
+        }
+        
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
             // Map user role to Spring Security authorities

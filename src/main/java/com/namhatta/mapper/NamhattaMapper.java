@@ -39,7 +39,10 @@ public class NamhattaMapper {
                 .shraddhakutirName(namhatta.getShraddhakutir() != null ? namhatta.getShraddhakutir().getName() : null)
                 .districtSupervisorId(namhatta.getDistrictSupervisor() != null ? namhatta.getDistrictSupervisor().getId() : null)
                 .districtSupervisorName(namhatta.getDistrictSupervisor() != null ? namhatta.getDistrictSupervisor().getUsername() : null)
-                .addresses(new ArrayList<>()) // TODO: Map addresses when relationship is available
+                .addresses(namhatta.getAddresses() != null ? 
+                    namhatta.getAddresses().stream()
+                        .map(this::mapAddressToDto)
+                        .collect(Collectors.toList()) : new ArrayList<>())
                 .devoteeCount(Long.valueOf(namhatta.getDevotees().size()))
                 .status(determineStatus(namhatta))
                 .createdAt(namhatta.getCreatedAt())

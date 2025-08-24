@@ -1,5 +1,8 @@
 package com.namhatta.controller;
 
+import com.namhatta.dto.DashboardStatsDto;
+import com.namhatta.dto.ErrorResponse;
+import com.namhatta.dto.StatusDistributionDto;
 import com.namhatta.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -19,7 +22,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
     
     @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> getDashboardStats(HttpServletRequest request) {
+    public ResponseEntity<?> getDashboardStats(HttpServletRequest request) {
         log.debug("Getting dashboard statistics");
         
         try {
@@ -33,7 +36,7 @@ public class DashboardController {
             }
             
             // Get real dashboard statistics from service
-            Map<String, Object> stats = dashboardService.getDashboardStats(allowedDistricts);
+            DashboardStatsDto stats = dashboardService.getDashboardStats(allowedDistricts);
             
             log.debug("Dashboard statistics retrieved successfully");
             return ResponseEntity.ok(stats);
@@ -42,15 +45,17 @@ public class DashboardController {
             log.error("Error retrieving dashboard statistics", e);
             
             // Return error response
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to retrieve dashboard statistics");
-            errorResponse.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
+            return ResponseEntity.status(500).body(
+                ErrorResponse.builder()
+                    .error("Failed to retrieve dashboard statistics")
+                    .message(e.getMessage())
+                    .build()
+            );
         }
     }
     
     @GetMapping("/status-distribution")
-    public ResponseEntity<List<Map<String, Object>>> getStatusDistribution(HttpServletRequest request) {
+    public ResponseEntity<?> getStatusDistribution(HttpServletRequest request) {
         log.debug("Getting status distribution");
         
         try {
@@ -64,7 +69,7 @@ public class DashboardController {
             }
             
             // Get real status distribution data from service
-            List<Map<String, Object>> distribution = dashboardService.getStatusDistributionList(allowedDistricts);
+            List<StatusDistributionDto> distribution = dashboardService.getStatusDistributionList(allowedDistricts);
             
             log.debug("Status distribution retrieved successfully");
             return ResponseEntity.ok(distribution);
@@ -73,12 +78,12 @@ public class DashboardController {
             log.error("Error retrieving status distribution", e);
             
             // Return error response
-            List<Map<String, Object>> errorResponse = new ArrayList<>();
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to retrieve status distribution");
-            error.put("message", e.getMessage());
-            errorResponse.add(error);
-            return ResponseEntity.status(500).body(errorResponse);
+            return ResponseEntity.status(500).body(
+                ErrorResponse.builder()
+                    .error("Failed to retrieve status distribution")
+                    .message(e.getMessage())
+                    .build()
+            );
         }
     }
 }

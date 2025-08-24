@@ -1,5 +1,7 @@
 package com.namhatta.service;
 
+import com.namhatta.dto.DashboardStatsDto;
+import com.namhatta.dto.StatusDistributionDto;
 import com.namhatta.repository.DevoteeRepository;
 import com.namhatta.repository.DevotionalStatusRepository;
 import com.namhatta.repository.NamhattaRepository;
@@ -33,31 +35,32 @@ public class DashboardService {
     /**
      * Get dashboard statistics with district filtering for supervisors
      */
-    public Map<String, Object> getDashboardStats(List<String> allowedDistricts) {
+    public DashboardStatsDto getDashboardStats(List<String> allowedDistricts) {
         log.debug("Getting dashboard statistics for districts: {}", allowedDistricts);
-        
-        Map<String, Object> stats = new HashMap<>();
         
         try {
             // Get total counts based on user access level
             if (allowedDistricts != null && !allowedDistricts.isEmpty()) {
                 // District supervisor - filtered counts
-                stats.put("totalDevotees", getDevoteeCountByDistricts(allowedDistricts));
-                stats.put("totalNamhattas", getNamhattaCountByDistricts(allowedDistricts));
-                stats.put("totalShraddhakutirs", getShraddhakutirCountByDistricts(allowedDistricts));
-                stats.put("approvalsPending", getPendingApprovalsCountByDistricts(allowedDistricts));
-                stats.put("statusDistribution", getStatusDistributionByDistricts(allowedDistricts));
+                return DashboardStatsDto.builder()
+                    .totalDevotees(getDevoteeCountByDistricts(allowedDistricts))
+                    .totalNamhattas(getNamhattaCountByDistricts(allowedDistricts))
+                    .totalStatuses(getShraddhakutirCountByDistricts(allowedDistricts))
+                    .totalUpdates(getPendingApprovalsCountByDistricts(allowedDistricts))
+                    .statusDistribution(getStatusDistributionByDistricts(allowedDistricts))
+                    .namhattaDistribution(new HashMap<>())
+                    .build();
             } else {
                 // Admin/Office - all counts
-                stats.put("totalDevotees", devoteeRepository.count());
-                stats.put("totalNamhattas", namhattaRepository.count());
-                stats.put("totalShraddhakutirs", shraddhakutirRepository.count());
-                stats.put("approvalsPending", namhattaRepository.countByIsApproved(false));
-                stats.put("statusDistribution", getStatusDistribution());
+                return DashboardStatsDto.builder()
+                    .totalDevotees(devoteeRepository.count())
+                    .totalNamhattas(namhattaRepository.count())
+                    .totalStatuses(shraddhakutirRepository.count())
+                    .totalUpdates(namhattaRepository.countByIsApproved(false))
+                    .statusDistribution(getStatusDistribution())
+                    .namhattaDistribution(new HashMap<>())
+                    .build();
             }
-            
-            log.debug("Dashboard stats calculated successfully");
-            return stats;
             
         } catch (Exception e) {
             log.error("Error calculating dashboard statistics", e);
@@ -102,7 +105,7 @@ public class DashboardService {
     /**
      * Get status distribution as list format (for /status-distribution endpoint)
      */
-    public List<Map<String, Object>> getStatusDistributionList(List<String> allowedDistricts) {
+    public List<StatusDistributionDto> getStatusDistributionList(List<String> allowedDistricts) {
         log.debug("Getting status distribution list for districts: {}", allowedDistricts);
         
         Map<String, Integer> distribution;
@@ -117,14 +120,11 @@ public class DashboardService {
         }
         
         return distribution.entrySet().stream()
-                .map(entry -> {
-                    Map<String, Object> statusInfo = new HashMap<>();
-                    statusInfo.put("status", entry.getKey());
-                    statusInfo.put("count", entry.getValue());
-                    statusInfo.put("percentage", totalDevotees > 0 ? 
-                        Math.round((entry.getValue() * 100.0 / totalDevotees) * 10.0) / 10.0 : 0.0);
-                    return statusInfo;
-                })
+                .map(entry -> StatusDistributionDto.builder()
+                    .status(entry.getKey())
+                    .count(entry.getValue())
+                    .label(entry.getKey() + " (" + entry.getValue() + ")")
+                    .build())
                 .collect(Collectors.toList());
     }
     

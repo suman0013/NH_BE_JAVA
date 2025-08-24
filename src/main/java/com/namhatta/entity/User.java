@@ -6,7 +6,9 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -46,6 +48,14 @@ public class User {
     @Column(name = "created_at")
     @Schema(description = "Account creation timestamp")
     private LocalDateTime createdAt;
+    
+    @ElementCollection
+    @CollectionTable(name = "user_districts", 
+                    joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "district")
+    @Schema(description = "Districts assigned to district supervisors")
+    @Builder.Default
+    private List<String> districts = new ArrayList<>();
     
     @PrePersist
     protected void onCreate() {
