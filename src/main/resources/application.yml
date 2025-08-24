@@ -40,7 +40,7 @@ spring:
       location: ${java.io.tmpdir}
       
 server:
-  port: 8080  # Spring Boot port (Node.js uses 5000)
+  port: 5000  # ALWAYS use port 5000 - same as Node.js for consistency
   servlet:
     context-path: /
   error:

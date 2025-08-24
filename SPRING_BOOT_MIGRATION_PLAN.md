@@ -2468,7 +2468,7 @@ public class DevoteeController {
 ---
 
 ### Task 5.4: Geographic & Dashboard Controllers
-**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+**Status**: ☐ Not Started | ☐ In Progress | ✓ Completed
 
 **Sub-tasks:**
 - [ ] Create `GeographicController.java` for location endpoints
@@ -2479,7 +2479,7 @@ public class DevoteeController {
 ---
 
 ### Task 5.5: Map Data & Statistics Controllers
-**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+**Status**: ☐ Not Started | ☐ In Progress | ✓ Completed
 
 **Purpose**: Implement map data APIs for namhatta distribution statistics by geographic levels
 
@@ -2587,7 +2587,7 @@ public class MapDataController {
 ---
 
 ### Task 5.6: Updates & Admin Controllers
-**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+**Status**: ☐ Not Started | ☐ In Progress | ✓ Completed
 
 **Purpose**: Implement namhatta updates and admin user management APIs
 
