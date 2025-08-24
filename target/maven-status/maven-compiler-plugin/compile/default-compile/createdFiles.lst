@@ -49,6 +49,8 @@ com/namhatta/controller/AuthController.class
 com/namhatta/config/security/InputSanitizationFilter$SanitizedRequestWrapper$1.class
 com/namhatta/dto/NamhattaAddressDto$NamhattaAddressDtoBuilder.class
 com/namhatta/dto/UpdateDevoteeDto.class
+com/namhatta/exception/GlobalExceptionHandler.class
+com/namhatta/dto/ErrorResponse.class
 com/namhatta/dto/DistrictDto.class
 com/namhatta/controller/DashboardController.class
 com/namhatta/mapper/NamhattaMapper.class
@@ -99,6 +101,7 @@ com/namhatta/entity/DevotionalCourse$DevotionalCourseBuilder.class
 com/namhatta/security/JwtTokenProvider.class
 com/namhatta/repository/DevotionalStatusRepository.class
 com/namhatta/dto/DevoteeDto.class
+com/namhatta/dto/ErrorResponse$ErrorResponseBuilder.class
 com/namhatta/entity/UserRole.class
 com/namhatta/entity/UserSession.class
 com/namhatta/dto/PagedResponse.class

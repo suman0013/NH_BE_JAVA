@@ -23,6 +23,7 @@
 /home/runner/workspace/src/main/java/com/namhatta/service/DevoteeService.java
 /home/runner/workspace/src/main/java/com/namhatta/entity/Shraddhakutir.java
 /home/runner/workspace/src/main/java/com/namhatta/entity/DevotionalCoursesConverter.java
+/home/runner/workspace/src/main/java/com/namhatta/dto/ErrorResponse.java
 /home/runner/workspace/src/main/java/com/namhatta/entity/UserSession.java
 /home/runner/workspace/src/main/java/com/namhatta/dto/NamhattaAddressDto.java
 /home/runner/workspace/src/main/java/com/namhatta/entity/Namhatta.java
@@ -36,6 +37,7 @@
 /home/runner/workspace/src/main/java/com/namhatta/repository/LeaderRepository.java
 /home/runner/workspace/src/main/java/com/namhatta/config/security/SecurityHeadersConfig.java
 /home/runner/workspace/src/main/java/com/namhatta/entity/DevotionalCourse.java
+/home/runner/workspace/src/main/java/com/namhatta/exception/GlobalExceptionHandler.java
 /home/runner/workspace/src/main/java/com/namhatta/repository/UserRepository.java
 /home/runner/workspace/src/main/java/com/namhatta/config/SwaggerConfig.java
 /home/runner/workspace/src/main/java/com/namhatta/security/UserDetailsServiceImpl.java
