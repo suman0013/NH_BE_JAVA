@@ -31,6 +31,14 @@ spring:
       port: 6379
       timeout: 2000ms
       
+  # File upload configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 50MB
+      location: ${java.io.tmpdir}
+      
 server:
   port: ${PORT:5000}  # Same port as Node.js version
   servlet:
@@ -82,3 +90,10 @@ springdoc:
     operations-sorter: method
     disable-swagger-default-url: true
     use-root-path: true
+    
+# File storage configuration
+storage:
+  type: ${STORAGE_TYPE:local}
+  local:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+  max-file-size: 5242880 # 5MB in bytes

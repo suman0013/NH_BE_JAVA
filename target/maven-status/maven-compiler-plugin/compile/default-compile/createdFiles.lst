@@ -1,3 +1,8 @@
 com/namhatta/config/SwaggerConfig.class
-com/namhatta/NamhattaApplication.class
+com/namhatta/controller/FileUploadController.class
+com/namhatta/config/CorsConfig.class
 com/namhatta/config/DatabaseConfig.class
+com/namhatta/config/SecurityConfig.class
+com/namhatta/NamhattaApplication.class
+com/namhatta/dto/FileUploadResponse.class
+com/namhatta/service/FileStorageService.class

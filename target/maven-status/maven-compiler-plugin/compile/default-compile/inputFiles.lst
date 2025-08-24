@@ -1,3 +1,8 @@
 /home/runner/workspace/src/main/java/com/namhatta/config/SwaggerConfig.java
+/home/runner/workspace/src/main/java/com/namhatta/config/SecurityConfig.java
+/home/runner/workspace/src/main/java/com/namhatta/service/FileStorageService.java
+/home/runner/workspace/src/main/java/com/namhatta/config/CorsConfig.java
+/home/runner/workspace/src/main/java/com/namhatta/controller/FileUploadController.java
+/home/runner/workspace/src/main/java/com/namhatta/dto/FileUploadResponse.java
 /home/runner/workspace/src/main/java/com/namhatta/NamhattaApplication.java
 /home/runner/workspace/src/main/java/com/namhatta/config/DatabaseConfig.java
