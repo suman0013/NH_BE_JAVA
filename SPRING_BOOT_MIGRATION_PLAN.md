@@ -447,7 +447,7 @@ session:
 
 ---
 
-### Task 1.3: Set Up Replit Configuration
+### Task 1.3: Set Up Replit Configuration  
 **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
 
 **Sub-tasks:**
@@ -456,6 +456,189 @@ session:
 - ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up environment variables in Replit Secrets
 - ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test hot reload functionality
 - ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure port forwarding for port 5000
+
+---
+
+### Task 1.4: File Upload & Storage Configuration
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Configure file upload handling for namhatta update images and implement cloud storage integration
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure Spring Boot Multipart file upload settings
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Implement file upload controller with validation (5MB limit, image types only)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up cloud storage integration (AWS S3, Google Cloud, or similar)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create image upload service with security validation
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure static file serving for uploaded images
+
+**Files to create:**
+```
+src/main/java/com/namhatta/
+├── controller/FileUploadController.java     <- File upload endpoint
+├── service/FileStorageService.java          <- File storage logic
+├── config/FileStorageConfig.java            <- Upload configuration
+└── dto/FileUploadResponse.java              <- Upload response DTO
+src/main/resources/
+└── application.yml                          <- Multipart configuration
+```
+
+**Configuration (application.yml):**
+```yaml
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 50MB
+      location: ${java.io.tmpdir}
+      
+# Cloud storage configuration
+storage:
+  type: ${STORAGE_TYPE:local} # local, s3, gcs
+  local:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+  s3:
+    bucket: ${AWS_S3_BUCKET:}
+    region: ${AWS_REGION:}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - File upload endpoint accepts multipart/form-data
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Image type validation (jpg, png, gif, webp)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - File size limit enforcement (5MB)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Secure file naming to prevent directory traversal
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Integration with namhatta updates API
+
+---
+
+### Task 1.5: Security & CORS Configuration
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement comprehensive security headers, CORS policy, and Content Security Policy
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure Spring Security headers (HSTS, CSP, X-Frame-Options)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up CORS policy (production vs development)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Implement Content Security Policy directives
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure X-Content-Type-Options and other security headers
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up request size limits and protection against malicious requests
+
+**Files to create:**
+```
+src/main/java/com/namhatta/config/
+├── SecurityConfig.java          <- Spring Security configuration
+├── CorsConfig.java             <- CORS policy configuration  
+└── WebConfig.java              <- Web MVC configuration
+```
+
+**Security Configuration:**
+```java
+@EnableWebSecurity
+@Slf4j
+public class SecurityConfig {
+    
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        log.info("Configuring Spring Security filter chain");
+        
+        return http
+            .headers(headers -> headers
+                .frameOptions().deny()
+                .contentTypeOptions().and()
+                .httpStrictTransportSecurity(hstsConfig -> hstsConfig
+                    .maxAgeInSeconds(31536000)
+                    .includeSubdomains(true))
+                .contentSecurityPolicy("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com"))
+            .csrf(csrf -> csrf.disable()) // Using JWT instead
+            .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**", "/api/health", "/api/about").permitAll()
+                .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                .anyRequest().authenticated())
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
+    }
+}
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - CORS policy blocks unauthorized origins in production
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Security headers present in all responses
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - CSP prevents XSS attacks
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Request size limits prevent DoS attacks
+
+---
+
+### Task 1.6: Environment & Configuration Management
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Set up comprehensive environment-specific configuration management
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create environment-specific application.yml files
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up @ConfigurationProperties beans for type-safe configuration
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure development vs production settings
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up logging configuration per environment
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create configuration validation
+
+**Files to create:**
+```
+src/main/java/com/namhatta/config/
+├── ApplicationProperties.java   <- Type-safe configuration
+├── DatabaseProperties.java     <- Database configuration
+└── SecurityProperties.java     <- Security configuration
+src/main/resources/
+├── application.yml             <- Base configuration
+├── application-dev.yml         <- Development settings
+├── application-prod.yml        <- Production settings
+└── application-test.yml        <- Test settings
+```
+
+**Configuration Properties:**
+```java
+@ConfigurationProperties(prefix = "app")
+@Data
+@Validated
+@Slf4j
+public class ApplicationProperties {
+    
+    public ApplicationProperties() {
+        log.info("Loading application configuration properties");
+    }
+    
+    @NotNull
+    private String name = "Namhatta Management System";
+    
+    @NotNull
+    private String version = "1.0.0";
+    
+    private final Jwt jwt = new Jwt();
+    private final Storage storage = new Storage();
+    
+    @Data
+    public static class Jwt {
+        @NotBlank
+        private String secret;
+        
+        @Min(3600000) // Minimum 1 hour
+        private long expiration = 3600000;
+    }
+    
+    @Data
+    public static class Storage {
+        private String type = "local";
+        private String uploadDir = "./uploads";
+        private long maxFileSize = 5 * 1024 * 1024; // 5MB
+    }
+}
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Type-safe configuration with validation
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Environment-specific profiles work correctly
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configuration validation fails startup on invalid values
 
 **Replit Configuration Files:**
 
@@ -487,6 +670,221 @@ run = ["mvn", "clean", "package", "-DskipTests", "&&", "java", "-jar", "target/*
 - [ ] Application accessible on port 5000
 - [ ] Environment variables loaded from Replit Secrets
 - [ ] Hot reload works when editing Java files
+
+---
+
+### Task 1.7: Scheduled Tasks & Background Jobs
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement cleanup jobs for expired tokens, sessions, and other maintenance tasks
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Enable Spring Boot scheduling (@EnableScheduling)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create JWT token cleanup job (runs every hour)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create user session cleanup job (runs every hour)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Add application statistics collection (daily)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure async task execution
+
+**Files to create:**
+```
+src/main/java/com/namhatta/
+├── service/ScheduledTasksService.java       <- Cleanup jobs
+├── config/AsyncConfig.java                  <- Async task configuration
+└── config/SchedulingConfig.java             <- Scheduling configuration
+```
+
+**Scheduled Service:**
+```java
+@Service
+@Slf4j
+public class ScheduledTasksService {
+    
+    @Scheduled(fixedRate = 3600000) // Every hour
+    public void cleanupExpiredTokens() {
+        log.info("Starting scheduled cleanup of expired JWT tokens");
+        try {
+            int cleaned = jwtService.cleanupExpiredTokens();
+            log.info("Cleaned up {} expired JWT tokens", cleaned);
+        } catch (Exception e) {
+            log.error("Error during JWT token cleanup", e);
+        }
+    }
+    
+    @Scheduled(fixedRate = 3600000) // Every hour
+    public void cleanupExpiredSessions() {
+        log.info("Starting scheduled cleanup of expired user sessions");
+        try {
+            int cleaned = sessionService.cleanupExpiredSessions();
+            log.info("Cleaned up {} expired user sessions", cleaned);
+        } catch (Exception e) {
+            log.error("Error during session cleanup", e);
+        }
+    }
+}
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Scheduled tasks run automatically
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Cleanup jobs reduce database bloat
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Error handling prevents task failures
+
+---
+
+### Task 1.8: Global Exception Handling & Error Responses
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement consistent error response format across all APIs
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create @ControllerAdvice for global exception handling
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Implement standard error response DTOs
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Handle validation errors (Bean Validation)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Handle authentication/authorization errors
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Handle database constraint violations
+
+**Files to create:**
+```
+src/main/java/com/namhatta/
+├── exception/GlobalExceptionHandler.java    <- @ControllerAdvice
+├── exception/NamhattaException.java         <- Custom exceptions
+├── dto/ErrorResponse.java                   <- Standard error format
+└── dto/ValidationErrorResponse.java         <- Validation error format
+```
+
+**Error Response Format:**
+```java
+@Data
+@Builder
+@Schema(description = "Standard error response")
+public class ErrorResponse {
+    @Schema(description = "Error message", example = "Invalid input data")
+    private String error;
+    
+    @Schema(description = "Detailed error message", example = "Field 'name' cannot be empty")
+    private String message;
+    
+    @Schema(description = "Validation errors", example = "[\"name is required\", \"email is invalid\"]")
+    private List<String> details;
+    
+    @Schema(description = "HTTP status code", example = "400")
+    private int status;
+    
+    @Schema(description = "Timestamp", example = "2025-01-01T12:00:00Z")
+    private LocalDateTime timestamp;
+}
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - All APIs return consistent error format
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Validation errors include field-specific details
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Security errors don't leak sensitive information
+
+---
+
+### Task 1.9: Monitoring & Health Checks  
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Implement comprehensive application monitoring and health check endpoints
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure Spring Boot Actuator endpoints
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Implement custom health indicators (database, external services)
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up application metrics collection
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure security for management endpoints
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Add custom info endpoint with build information
+
+**Files to create:**
+```
+src/main/java/com/namhatta/
+├── health/DatabaseHealthIndicator.java      <- Custom health checks
+├── health/StorageHealthIndicator.java       <- Storage health check
+└── config/ActuatorConfig.java               <- Actuator configuration
+```
+
+**Health Configuration:**
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+  info:
+    env:
+      enabled: true
+    build:
+      enabled: true
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Health endpoint returns database connectivity status
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Metrics endpoint provides application statistics
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Management endpoints are secured
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Custom health indicators detect service issues
+
+---
+
+### Task 1.10: Testing Configuration & Infrastructure
+**Status**: ☐ Not Started | ☐ In Progress | ☐ Completed
+
+**Purpose**: Set up comprehensive testing infrastructure for integration and unit tests
+
+**Sub-tasks:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure Testcontainers for integration tests
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up test profiles and configurations
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Create test data builders and utilities
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Configure MockMvc for controller testing
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Set up database test fixtures
+
+**Files to create:**
+```
+src/test/java/com/namhatta/
+├── config/TestConfig.java                   <- Test configuration
+├── util/TestDataBuilder.java                <- Test data creation
+├── integration/BaseIntegrationTest.java     <- Integration test base
+└── controller/AbstractControllerTest.java   <- Controller test base
+```
+
+**Test Configuration:**
+```java
+@TestConfiguration
+@Profile("test")
+@Slf4j
+public class TestConfig {
+    
+    @Bean
+    @Primary
+    public DataSource testDataSource() {
+        log.info("Setting up test database with Testcontainers");
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
+            .withDatabaseName("namhatta_test")
+            .withUsername("test")
+            .withPassword("test");
+        postgres.start();
+        
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(postgres.getJdbcUrl());
+        config.setUsername(postgres.getUsername());
+        config.setPassword(postgres.getPassword());
+        return new HikariDataSource(config);
+    }
+}
+```
+
+**Validation Criteria:**
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Integration tests run with real database
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test data builders create valid entities
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Controller tests validate request/response formats
+- ☐ **Status**: ☐ Not Started | ☐ In Progress | ☐ Completed - Test database isolated from development database
 
 ## Phase 2: Database Entities & JPA Mapping
 
